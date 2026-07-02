@@ -1,0 +1,11 @@
+D:\Manikandan\sadalene\Sadalene.Core\bin\Debug\net10.0\Sadalene.Core.deps.json
+D:\Manikandan\sadalene\Sadalene.Core\bin\Debug\net10.0\Sadalene.Core.dll
+D:\Manikandan\sadalene\Sadalene.Core\bin\Debug\net10.0\Sadalene.Core.pdb
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\Sadalene.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\Sadalene.Core.AssemblyInfoInputs.cache
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\Sadalene.Core.AssemblyInfo.cs
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\Sadalene.Core.csproj.CoreCompileInputs.cache
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\Sadalene.Core.dll
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\refint\Sadalene.Core.dll
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\Sadalene.Core.pdb
+D:\Manikandan\sadalene\Sadalene.Core\obj\Debug\net10.0\ref\Sadalene.Core.dll

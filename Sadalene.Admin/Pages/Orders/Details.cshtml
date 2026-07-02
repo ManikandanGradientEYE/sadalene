@@ -1,0 +1,82 @@
+@page "{id:int}"
+@model Sadalene.Admin.Pages.Orders.DetailsModel
+@{
+    ViewData["Title"] = $"Order {Model.Order?.OrderNumber}";
+    ViewData["ActiveMenu"] = "Orders";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Order <span class="font-monospace">@Model.Order!.OrderNumber</span></h5>
+    <span class="badge ms-3 @(Model.Order.Status == Sadalene.Core.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
+                               Model.Order.Status == Sadalene.Core.Enums.OrderStatus.Confirmed ? "bg-success" :
+                               Model.Order.Status == Sadalene.Core.Enums.OrderStatus.Cancelled ? "bg-danger" : "bg-info")">
+        @Model.Order.Status
+    </span>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header fw-semibold">Order Info</div>
+            <div class="card-body small">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">Customer</dt>    <dd class="col-7 fw-semibold">@Model.Order.Customer.FullName</dd>
+                    <dt class="col-5 text-muted">Phone</dt>       <dd class="col-7">@Model.Order.Customer.Phone</dd>
+                    <dt class="col-5 text-muted">Agent</dt>       <dd class="col-7">@(Model.Order.Agent?.FullName ?? "—")</dd>
+                    <dt class="col-5 text-muted">Placed By</dt>   <dd class="col-7">@(Model.Order.PlacedByUser?.FullName ?? "Self")</dd>
+                    <dt class="col-5 text-muted">Order Date</dt>  <dd class="col-7">@Model.Order.OrderDate.ToString("dd MMM yyyy HH:mm")</dd>
+                    @if (Model.Order.Notes != null)
+                    {
+                        <dt class="col-5 text-muted">Notes</dt>   <dd class="col-7">@Model.Order.Notes</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header fw-semibold">Update Status</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="UpdateStatus">
+                    <select name="status" class="form-select form-select-sm mb-2"
+                            asp-items="Html.GetEnumSelectList<Sadalene.Core.Enums.OrderStatus>()"></select>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Update Status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header fw-semibold">Order Items</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Product</th><th>Division</th><th>Qty</th><th>Unit</th><th>Source</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Order.Items)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.Product.Name</td>
+                                <td class="text-muted small">@item.Product.Division.Name</td>
+                                <td>@item.Quantity.ToString("N2")</td>
+                                <td class="text-muted">@item.UnitOfMeasure</td>
+                                <td>
+                                    @if (item.AddedByBarcodeScan)
+                                    {
+                                        <span class="badge bg-info text-dark"><i class="bi bi-upc-scan me-1"></i>Barcode</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark">Catalog</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

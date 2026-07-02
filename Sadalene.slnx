@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Sadalene.Admin/Sadalene.Admin.csproj" />
+  <Project Path="Sadalene.API/Sadalene.API.csproj" />
+  <Project Path="Sadalene.Core/Sadalene.Core.csproj" />
+  <Project Path="Sadalene.Infrastructure/Sadalene.Infrastructure.csproj" />
+</Solution>

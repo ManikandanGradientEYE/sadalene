@@ -1,0 +1,17 @@
+D:\Manikandan\sadalene\Sadalene.Infrastructure\bin\Debug\net10.0\Sadalene.Infrastructure.deps.json
+D:\Manikandan\sadalene\Sadalene.Infrastructure\bin\Debug\net10.0\Sadalene.Infrastructure.runtimeconfig.json
+D:\Manikandan\sadalene\Sadalene.Infrastructure\bin\Debug\net10.0\Sadalene.Infrastructure.dll
+D:\Manikandan\sadalene\Sadalene.Infrastructure\bin\Debug\net10.0\Sadalene.Infrastructure.pdb
+D:\Manikandan\sadalene\Sadalene.Infrastructure\bin\Debug\net10.0\Sadalene.Core.dll
+D:\Manikandan\sadalene\Sadalene.Infrastructure\bin\Debug\net10.0\Sadalene.Core.pdb
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.csproj.AssemblyReference.cache
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.AssemblyInfoInputs.cache
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.AssemblyInfo.cs
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.csproj.CoreCompileInputs.cache
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.24FFFA25.Up2Date
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.dll
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\refint\Sadalene.Infrastructure.dll
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.pdb
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\Sadalene.Infrastructure.genruntimeconfig.cache
+D:\Manikandan\sadalene\Sadalene.Infrastructure\obj\Debug\net10.0\ref\Sadalene.Infrastructure.dll

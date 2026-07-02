@@ -1,0 +1,45 @@
+@page
+@model Sadalene.Admin.Pages.Auth.LoginModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = "_LoginLayout";
+}
+
+<div class="login-card card">
+    <div class="login-header">
+        <i class="bi bi-shield-lock-fill fs-1 mb-2 d-block"></i>
+        <h4 class="mb-0 fw-bold">Sadalene Admin</h4>
+        <small class="opacity-75">Textile Management System</small>
+    </div>
+    <div class="card-body p-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Phone" class="form-label fw-semibold">Phone Number</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                    <input asp-for="Input.Phone" class="form-control" placeholder="Enter phone number" />
+                </div>
+                <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Input.Password" class="form-label fw-semibold">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input asp-for="Input.Password" type="password" class="form-control" placeholder="Enter password" />
+                </div>
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

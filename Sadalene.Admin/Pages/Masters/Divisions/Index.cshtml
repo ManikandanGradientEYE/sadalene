@@ -1,0 +1,48 @@
+@page
+@model Sadalene.Admin.Pages.Masters.Divisions.IndexModel
+@{
+    ViewData["Title"] = "Divisions & Units of Measure";
+    ViewData["ActiveMenu"] = "Divisions";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2"></i>Divisions & Units of Measure</h5>
+</div>
+
+@foreach (var d in Model.Divisions)
+{
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">@d.Name <span class="text-muted fw-normal small ms-2">@d.Description</span></span>
+            <span class="badge @(d.IsActive ? "bg-success" : "bg-secondary")">@(d.IsActive ? "Active" : "Inactive")</span>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                @foreach (var u in d.UnitOfMeasures)
+                {
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge @(u.IsDefault ? "bg-primary" : "bg-light text-dark border") py-2 px-3">
+                            @u.UnitName @(u.IsDefault ? "(Default)" : "")
+                        </span>
+                    </div>
+                }
+            </div>
+            <div class="mt-3">
+                <form method="post" asp-page-handler="AddUnit" class="row g-2 align-items-end">
+                    <input type="hidden" name="divisionId" value="@d.Id" />
+                    <div class="col-auto">
+                        <label class="form-label fw-semibold small mb-1">Add Unit</label>
+                        <input name="unitName" class="form-control form-control-sm" placeholder="e.g. Quarter Set" style="width:160px" required />
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" name="isDefault" value="true" class="form-check-input" id="def-@d.Id" />
+                            <label class="form-check-label small" for="def-@d.Id">Default</label>
+                        </div>
+                    </div>
+                    <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary">Add Unit</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

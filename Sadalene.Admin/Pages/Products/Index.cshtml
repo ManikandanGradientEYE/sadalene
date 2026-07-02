@@ -1,0 +1,56 @@
+@page
+@model Sadalene.Admin.Pages.Products.IndexModel
+@{
+    ViewData["Title"] = "Products";
+    ViewData["ActiveMenu"] = "Products";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 fw-bold"><i class="bi bi-grid me-2"></i>Products</h5>
+    <a asp-page="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Product</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Code</th><th>Name</th><th>Category</th><th>Division</th><th>Barcode</th><th>Stock</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Products)
+                {
+                    <tr>
+                        <td class="text-muted small">@(p.ProductCode ?? "—")</td>
+                        <td class="fw-semibold">@p.Name</td>
+                        <td class="text-muted small">@p.Category.Name / @p.SubCategory.Name</td>
+                        <td><span class="badge bg-secondary">@p.Division.Name</span></td>
+                        <td>
+                            @if (p.IsBarcodeActive)
+                            {
+                                <span class="badge bg-success"><i class="bi bi-upc-scan me-1"></i>Active</span>
+                            }
+                            else
+                            {
+                                <a asp-page="Barcode" asp-route-id="@p.Id" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:.75rem">
+                                    <i class="bi bi-upc me-1"></i>Generate
+                                </a>
+                            }
+                        </td>
+                        <td class="text-muted small">
+                            @(p.InventoryRecords.FirstOrDefault()?.QuantityAvailable.ToString("N0") ?? "—")
+                            @(p.InventoryRecords.FirstOrDefault()?.UnitOfMeasure ?? "")
+                        </td>
+                        <td><span class="badge @(p.IsActive ? "bg-success" : "bg-secondary")">@(p.IsActive ? "Active" : "Inactive")</span></td>
+                        <td>
+                            <a asp-page="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            @if (p.IsBarcodeActive)
+                            {
+                                <a asp-page="Barcode" asp-route-id="@p.Id" class="btn btn-sm btn-outline-success ms-1" title="View Barcode"><i class="bi bi-upc-scan"></i></a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,107 @@
+@page
+@model Sadalene.Admin.Pages.Inventory.IndexModel
+@{
+    ViewData["Title"] = "Inventory";
+    ViewData["ActiveMenu"] = "Inventory";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 fw-bold"><i class="bi bi-boxes me-2"></i>Inventory</h5>
+    <form method="post" asp-page-handler="Sync">
+        <button class="btn btn-success btn-sm" type="submit">
+            <i class="bi bi-arrow-repeat me-1"></i>Run Sync Now
+        </button>
+    </form>
+</div>
+
+@if (Model.LastSync != null)
+{
+    <div class="alert @(Model.LastSync.IsSuccess ? "alert-success" : "alert-danger") py-2 small mb-3">
+        <i class="bi @(Model.LastSync.IsSuccess ? "bi-check-circle" : "bi-exclamation-triangle") me-2"></i>
+        Last sync: <strong>@Model.LastSync.SyncStartedAt.ToString("dd MMM yyyy HH:mm")</strong>
+        — @(Model.LastSync.IsSuccess ? $"{Model.LastSync.RecordsUpdated} records updated" : Model.LastSync.ErrorMessage)
+        by <strong>@Model.LastSync.TriggeredBy</strong>
+    </div>
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header fw-semibold">Manual Stock Update</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="UpdateStock">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Product</label>
+                            <select name="productId" class="form-select form-select-sm">
+                                @foreach (var p in Model.Products)
+                                {
+                                    <option value="@p.Id">@p.Name (@p.Division.Name)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small fw-semibold">Qty</label>
+                            <input name="quantity" type="number" step="0.001" class="form-control form-control-sm" placeholder="0" />
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small fw-semibold">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-sm d-block w-100">Update</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header fw-semibold">Current Stock Levels</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Product</th><th>Division</th><th>Quantity</th><th>Unit</th><th>Last Synced</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var inv in Model.Inventory)
+                {
+                    <tr>
+                        <td class="fw-semibold">@inv.Product.Name</td>
+                        <td><span class="badge bg-secondary">@inv.Product.Division.Name</span></td>
+                        <td class="@(inv.QuantityAvailable == 0 ? "text-danger fw-bold" : "")">@inv.QuantityAvailable.ToString("N2")</td>
+                        <td class="text-muted">@inv.UnitOfMeasure</td>
+                        <td class="text-muted small">@inv.LastSyncedAt.ToString("dd MMM yyyy HH:mm")</td>
+                    </tr>
+                }
+                @if (!Model.Inventory.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-3">No inventory records. Add products and sync.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header fw-semibold">Sync History</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 small">
+            <thead class="table-light">
+                <tr><th>Started</th><th>Duration</th><th>Records</th><th>Triggered By</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.SyncLogs)
+                {
+                    var duration = log.SyncCompletedAt.HasValue ? (log.SyncCompletedAt.Value - log.SyncStartedAt).TotalSeconds : 0;
+                    <tr>
+                        <td>@log.SyncStartedAt.ToString("dd MMM yyyy HH:mm")</td>
+                        <td class="text-muted">@duration.ToString("N1")s</td>
+                        <td>@(log.RecordsUpdated?.ToString() ?? "—")</td>
+                        <td>@log.TriggeredBy</td>
+                        <td><span class="badge @(log.IsSuccess ? "bg-success" : "bg-danger")">@(log.IsSuccess ? "Success" : "Failed")</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

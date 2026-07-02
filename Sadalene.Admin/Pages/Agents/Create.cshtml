@@ -1,0 +1,40 @@
+@page
+@model Sadalene.Admin.Pages.Agents.CreateModel
+@{
+    ViewData["Title"] = "Add Agent";
+    ViewData["ActiveMenu"] = "Agents";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Add Agent</h5>
+</div>
+
+<div class="card" style="max-width:500px">
+    <div class="card-body">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+            <div class="mb-3">
+                <label asp-for="Input.FullName" class="form-label fw-semibold">Full Name</label>
+                <input asp-for="Input.FullName" class="form-control" />
+                <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Phone" class="form-label fw-semibold">Phone</label>
+                <input asp-for="Input.Phone" class="form-control" />
+                <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label fw-semibold">Email</label>
+                <input asp-for="Input.Email" type="email" class="form-control" />
+            </div>
+            <div class="mb-4">
+                <label asp-for="Input.AgentCode" class="form-label fw-semibold">Agent Code</label>
+                <input asp-for="Input.AgentCode" class="form-control" placeholder="e.g. AGT-001" />
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Create Agent</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

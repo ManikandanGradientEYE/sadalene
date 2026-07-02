@@ -1,0 +1,114 @@
+@page
+@model Sadalene.Admin.Pages.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActiveMenu"] = "Dashboard";
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#1a5276,#2980b9)">
+            <div class="fs-2 fw-bold">@Model.TotalOrders</div>
+            <div class="small opacity-75"><i class="bi bi-bag-check me-1"></i>Total Orders</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#1e8449,#27ae60)">
+            <div class="fs-2 fw-bold">@Model.TotalCustomers</div>
+            <div class="small opacity-75"><i class="bi bi-people me-1"></i>Customers</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#7d6608,#d4ac0d)">
+            <div class="fs-2 fw-bold">@Model.TotalProducts</div>
+            <div class="small opacity-75"><i class="bi bi-grid me-1"></i>Products</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#6e2fa0,#9b59b6)">
+            <div class="fs-2 fw-bold">@Model.PendingOrders</div>
+            <div class="small opacity-75"><i class="bi bi-clock me-1"></i>Pending Orders</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bag-check me-2 text-primary"></i>Recent Orders</span>
+                <a asp-page="/Orders/Index" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Order #</th><th>Customer</th><th>Date</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.RecentOrders)
+                        {
+                            <tr>
+                                <td><a asp-page="/Orders/Details" asp-route-id="@order.Id" class="fw-semibold text-decoration-none">@order.OrderNumber</a></td>
+                                <td>@order.Customer.FullName</td>
+                                <td class="text-muted small">@order.OrderDate.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <span class="badge @(order.Status == Sadalene.Core.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
+                                                         order.Status == Sadalene.Core.Enums.OrderStatus.Confirmed ? "bg-success" :
+                                                         order.Status == Sadalene.Core.Enums.OrderStatus.Cancelled ? "bg-danger" : "bg-info")">
+                                        @order.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.RecentOrders.Any())
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-3">No orders yet</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-arrow-repeat me-2 text-success"></i>Inventory Sync Status</div>
+            <div class="card-body">
+                @if (Model.LastSync != null)
+                {
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge @(Model.LastSync.IsSuccess ? "bg-success" : "bg-danger")">
+                            @(Model.LastSync.IsSuccess ? "Success" : "Failed")
+                        </span>
+                        <span class="text-muted small">@Model.LastSync.SyncStartedAt.ToString("dd MMM yyyy HH:mm")</span>
+                    </div>
+                    <div class="small text-muted">Records updated: <strong>@(Model.LastSync.RecordsUpdated ?? 0)</strong></div>
+                    <div class="small text-muted">Triggered by: <strong>@Model.LastSync.TriggeredBy</strong></div>
+                }
+                else { <p class="text-muted small">No sync has been run yet.</p> }
+                <a asp-page="/Inventory/Index" class="btn btn-success btn-sm mt-3 w-100">
+                    <i class="bi bi-arrow-repeat me-2"></i>Go to Inventory
+                </a>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-upc-scan me-2 text-warning"></i>Barcode Status</div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="fs-4 fw-bold text-success">@Model.ProductsWithBarcode</div>
+                        <div class="small text-muted">With Barcode</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="fs-4 fw-bold text-warning">@Model.ProductsWithoutBarcode</div>
+                        <div class="small text-muted">Without Barcode</div>
+                    </div>
+                </div>
+                <a asp-page="/Products/Index" class="btn btn-outline-warning btn-sm mt-3 w-100">
+                    <i class="bi bi-upc-scan me-2"></i>Manage Barcodes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

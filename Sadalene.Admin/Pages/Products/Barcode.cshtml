@@ -1,0 +1,83 @@
+@page "{id:int}"
+@model Sadalene.Admin.Pages.Products.BarcodeModel
+@{
+    ViewData["Title"] = "Barcode Management";
+    ViewData["ActiveMenu"] = "Products";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Barcode — @Model.Product!.Name</h5>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-5">
+        <div class="card text-center">
+            <div class="card-header fw-semibold">Current Barcode</div>
+            <div class="card-body py-4">
+                @if (Model.Product.IsBarcodeActive && Model.Product.BarcodeImageUrl != null)
+                {
+                    <img src="@Model.Product.BarcodeImageUrl" alt="Barcode" class="img-fluid" style="max-width:220px" />
+                    <div class="mt-2 text-muted small font-monospace">@Model.Product.BarcodeValue</div>
+                    <div class="mt-1 text-muted small">Generated: @Model.Product.BarcodeGeneratedAt?.ToString("dd MMM yyyy HH:mm")</div>
+                    <div class="d-flex gap-2 justify-content-center mt-3">
+                        <a href="@Model.Product.BarcodeImageUrl" download="barcode-@(Model.Product.ProductCode).png" class="btn btn-sm btn-success">
+                            <i class="bi bi-download me-1"></i>Download
+                        </a>
+                        <form method="post" asp-page-handler="Deactivate" class="d-inline">
+                            <button class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x-circle me-1"></i>Deactivate
+                            </button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted py-4">
+                        <i class="bi bi-upc fs-1 d-block mb-2"></i>
+                        No barcode generated yet
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header fw-semibold">Generate / Regenerate Barcode</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="Generate">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Barcode Value</label>
+                        <input name="barcodeValue" class="form-control font-monospace"
+                               value="@(Model.Product.BarcodeValue ?? $"SDL-{Model.Product.Id:D6}")"
+                               placeholder="e.g. SDL-000001" required />
+                        <div class="form-text">Leave as-is for auto-generated value, or enter a custom one.</div>
+                    </div>
+                    @if (Model.Product.IsBarcodeActive)
+                    {
+                        <div class="alert alert-warning py-2 small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Regenerating will replace the existing barcode. Update printed labels accordingly.
+                        </div>
+                    }
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-upc-scan me-2"></i>@(Model.Product.IsBarcodeActive ? "Regenerate" : "Generate") Barcode
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header fw-semibold">Product Info</div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted">Division</dt>     <dd class="col-7">@Model.Product.Division.Name</dd>
+                    <dt class="col-5 text-muted">Category</dt>     <dd class="col-7">@Model.Product.Category.Name</dd>
+                    <dt class="col-5 text-muted">Sub-Category</dt> <dd class="col-7">@Model.Product.SubCategory.Name</dd>
+                    <dt class="col-5 text-muted">Product Code</dt> <dd class="col-7 font-monospace">@(Model.Product.ProductCode ?? "—")</dd>
+                    <dt class="col-5 text-muted">Brand</dt>        <dd class="col-7">@(Model.Product.Brand ?? "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

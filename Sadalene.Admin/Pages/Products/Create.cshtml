@@ -1,0 +1,88 @@
+@page
+@model Sadalene.Admin.Pages.Products.CreateModel
+@{
+    ViewData["Title"] = "Add Product";
+    ViewData["ActiveMenu"] = "Products";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Add Product</h5>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label asp-for="Input.Name" class="form-label fw-semibold">Product Name</label>
+                    <input asp-for="Input.Name" class="form-control" />
+                    <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.ProductCode" class="form-label fw-semibold">Product Code</label>
+                    <input asp-for="Input.ProductCode" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.CategoryId" class="form-label fw-semibold">Category</label>
+                    <select asp-for="Input.CategoryId" class="form-select" id="catSelect" asp-items="Model.Categories"></select>
+                    <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.SubCategoryId" class="form-label fw-semibold">Sub-Category</label>
+                    <select asp-for="Input.SubCategoryId" class="form-select" asp-items="Model.SubCategories"></select>
+                    <span asp-validation-for="Input.SubCategoryId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.ProductTypeId" class="form-label fw-semibold">Product Type</label>
+                    <select asp-for="Input.ProductTypeId" class="form-select" asp-items="Model.ProductTypes"></select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.DivisionId" class="form-label fw-semibold">Division</label>
+                    <select asp-for="Input.DivisionId" class="form-select" asp-items="Model.Divisions"></select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.Brand" class="form-label fw-semibold">Brand</label>
+                    <input asp-for="Input.Brand" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.Color" class="form-label fw-semibold">Color</label>
+                    <input asp-for="Input.Color" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="Input.FabricComposition" class="form-label fw-semibold">Fabric Composition</label>
+                    <input asp-for="Input.FabricComposition" class="form-control" placeholder="e.g. 100% Cotton" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.Width" class="form-label fw-semibold">Width</label>
+                    <input asp-for="Input.Width" class="form-control" placeholder="e.g. 44 inches" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.Weight" class="form-label fw-semibold">Weight</label>
+                    <input asp-for="Input.Weight" class="form-control" placeholder="e.g. 180 GSM" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.Design" class="form-label fw-semibold">Design</label>
+                    <input asp-for="Input.Design" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.DisplayOrder" class="form-label fw-semibold">Display Order</label>
+                    <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.Description" class="form-label fw-semibold">Description</label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Product Image</label>
+                    <input type="file" name="ImageFile" class="form-control" accept="image/*" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3"><i class="bi bi-check-lg me-2"></i>Create Product</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

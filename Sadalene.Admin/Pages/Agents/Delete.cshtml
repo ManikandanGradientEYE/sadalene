@@ -1,0 +1,17 @@
+@page "{id:int}"
+@model Sadalene.Admin.Pages.Agents.DeleteModel
+@{
+    ViewData["Title"] = "Delete Agent";
+    ViewData["ActiveMenu"] = "Agents";
+}
+
+<div class="card" style="max-width:480px">
+    <div class="card-header bg-danger text-white fw-semibold">Confirm Delete</div>
+    <div class="card-body">
+        <p>Deactivate agent <strong>@Model.AgentName</strong>?</p>
+        <form method="post">
+            <button type="submit" class="btn btn-danger me-2">Yes, Deactivate</button>
+            <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
