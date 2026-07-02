@@ -8,6 +8,7 @@ namespace Sadalene.Core.Entities.Products;
 public class Product : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
+    public string? MarketName { get; set; }
     public string? Description { get; set; }
     public string? ProductCode { get; set; }
 
@@ -23,11 +24,23 @@ public class Product : BaseEntity
     public int DivisionId { get; set; }
     public Division Division { get; set; } = null!;
 
-    // Specifications (fabric-specific details)
+    // Pricing & UOM
+    public int? UomMasterId { get; set; }
+    public UomMaster? UomMaster { get; set; }
+    public decimal? Rate { get; set; }
+    public string? RatePer { get; set; }
+    public decimal? Cut { get; set; }
+    public decimal? QtyPerUnit { get; set; }
+    public int? PackingTypeId { get; set; }
+    public PackingType? PackingType { get; set; }
+    public string? Grade { get; set; }
+
+    // Specifications
     public string? FabricComposition { get; set; }
     public string? Width { get; set; }
     public string? Weight { get; set; }
     public string? Color { get; set; }
+    public string? DesignNo { get; set; }
     public string? Design { get; set; }
     public string? Brand { get; set; }
 

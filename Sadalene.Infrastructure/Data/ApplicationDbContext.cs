@@ -20,10 +20,11 @@ public class ApplicationDbContext : DbContext
 
     // Masters
     public DbSet<Division> Divisions => Set<Division>();
-    public DbSet<DivisionUnitOfMeasure> DivisionUnitOfMeasures => Set<DivisionUnitOfMeasure>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<SubCategory> SubCategories => Set<SubCategory>();
     public DbSet<ProductType> ProductTypes => Set<ProductType>();
+    public DbSet<PackingType> PackingTypes => Set<PackingType>();
+    public DbSet<UomMaster> UomMasters => Set<UomMaster>();
 
     // Products
     public DbSet<Product> Products => Set<Product>();
@@ -32,6 +33,7 @@ public class ApplicationDbContext : DbContext
     // Inventory
     public DbSet<InventoryRecord> InventoryRecords => Set<InventoryRecord>();
     public DbSet<InventorySyncLog> InventorySyncLogs => Set<InventorySyncLog>();
+    public DbSet<InventoryAdjustmentLog> InventoryAdjustmentLogs => Set<InventoryAdjustmentLog>();
 
     // Orders
     public DbSet<Order> Orders => Set<Order>();

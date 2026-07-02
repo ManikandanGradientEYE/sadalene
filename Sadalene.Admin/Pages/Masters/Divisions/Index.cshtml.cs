@@ -14,18 +14,42 @@ public class IndexModel : PageModel
     public List<Division> Divisions { get; set; } = [];
 
     public async Task OnGetAsync() =>
-        Divisions = await _db.Divisions.Include(d => d.UnitOfMeasures).OrderBy(d => d.Name).ToListAsync();
+        Divisions = await _db.Divisions
+            .Include(d => d.Categories)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
 
-    public async Task<IActionResult> OnPostAddUnitAsync(int divisionId, string unitName, bool isDefault)
+    public async Task<IActionResult> OnPostAddDivisionAsync(string name, string? description)
     {
-        _db.DivisionUnitOfMeasures.Add(new DivisionUnitOfMeasure
-        {
-            DivisionId = divisionId,
-            UnitName   = unitName,
-            IsDefault  = isDefault
-        });
+        _db.Divisions.Add(new Division { Name = name, Description = description ?? string.Empty });
         await _db.SaveChangesAsync();
-        TempData["Success"] = "Unit of measure added.";
+        TempData["Success"] = $"Division '{name}' created.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostEditDivisionAsync(int id, string name, string? description)
+    {
+        var division = await _db.Divisions.FindAsync(id);
+        if (division != null)
+        {
+            division.Name        = name;
+            division.Description = description ?? string.Empty;
+            division.UpdatedAt   = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+        TempData["Success"] = "Division updated.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostToggleDivisionAsync(int id)
+    {
+        var division = await _db.Divisions.FindAsync(id);
+        if (division != null)
+        {
+            division.IsActive  = !division.IsActive;
+            division.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
         return RedirectToPage();
     }
 }

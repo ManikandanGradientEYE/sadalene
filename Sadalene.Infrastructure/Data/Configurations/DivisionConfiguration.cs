@@ -16,10 +16,10 @@ public class DivisionConfiguration : IEntityTypeConfiguration<Division>
 
         builder.HasIndex(x => x.Name).IsUnique();
 
-        builder.HasMany(x => x.UnitOfMeasures)
-            .WithOne(u => u.Division)
-            .HasForeignKey(u => u.DivisionId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(x => x.Categories)
+            .WithOne(c => c.Division)
+            .HasForeignKey(c => c.DivisionId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Seed data from BRD
         builder.HasData(

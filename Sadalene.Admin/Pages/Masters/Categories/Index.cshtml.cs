@@ -12,22 +12,50 @@ public class IndexModel : PageModel
     public IndexModel(ApplicationDbContext db) => _db = db;
 
     public List<Category> Categories { get; set; } = [];
+    public List<Division> AllDivisions { get; set; } = [];
 
-    public async Task OnGetAsync() =>
-        Categories = await _db.Categories.Include(c => c.SubCategories).OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name).ToListAsync();
-
-    public async Task<IActionResult> OnPostAddAsync(string name, string? description, int displayOrder)
+    public async Task OnGetAsync()
     {
-        _db.Categories.Add(new Category { Name = name, Description = description, DisplayOrder = displayOrder });
+        Categories = await _db.Categories
+            .Include(c => c.Division)
+            .Include(c => c.SubCategories)
+            .OrderBy(c => c.Division.Name)
+            .ThenBy(c => c.DisplayOrder)
+            .ThenBy(c => c.Name)
+            .ToListAsync();
+
+        AllDivisions = await _db.Divisions
+            .Where(d => d.IsActive)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
+
+    public async Task<IActionResult> OnPostAddAsync(int divisionId, string name, string? description, int displayOrder)
+    {
+        _db.Categories.Add(new Category
+        {
+            DivisionId   = divisionId,
+            Name         = name,
+            Description  = description,
+            DisplayOrder = displayOrder
+        });
         await _db.SaveChangesAsync();
-        TempData["Success"] = "Category added.";
+        TempData["Success"] = $"Category '{name}' added.";
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostEditAsync(int id, string name, string? description, int displayOrder)
+    public async Task<IActionResult> OnPostEditAsync(int id, int divisionId, string name, string? description, int displayOrder)
     {
         var c = await _db.Categories.FindAsync(id);
-        if (c != null) { c.Name = name; c.Description = description; c.DisplayOrder = displayOrder; c.UpdatedAt = DateTime.UtcNow; await _db.SaveChangesAsync(); }
+        if (c != null)
+        {
+            c.DivisionId   = divisionId;
+            c.Name         = name;
+            c.Description  = description;
+            c.DisplayOrder = displayOrder;
+            c.UpdatedAt    = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
         TempData["Success"] = "Category updated.";
         return RedirectToPage();
     }
@@ -35,7 +63,12 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostToggleAsync(int id)
     {
         var c = await _db.Categories.FindAsync(id);
-        if (c != null) { c.IsActive = !c.IsActive; c.UpdatedAt = DateTime.UtcNow; await _db.SaveChangesAsync(); }
+        if (c != null)
+        {
+            c.IsActive  = !c.IsActive;
+            c.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
         return RedirectToPage();
     }
 }

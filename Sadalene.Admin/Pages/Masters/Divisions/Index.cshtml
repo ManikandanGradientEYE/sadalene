@@ -1,48 +1,117 @@
 @page
 @model Sadalene.Admin.Pages.Masters.Divisions.IndexModel
 @{
-    ViewData["Title"] = "Divisions & Units of Measure";
+    ViewData["Title"] = "Divisions";
     ViewData["ActiveMenu"] = "Divisions";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2"></i>Divisions & Units of Measure</h5>
+    <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2"></i>Divisions</h5>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDivisionModal">
+        <i class="bi bi-plus-lg me-1"></i>Add Division
+    </button>
 </div>
 
-@foreach (var d in Model.Divisions)
-{
-    <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span class="fw-semibold">@d.Name <span class="text-muted fw-normal small ms-2">@d.Description</span></span>
-            <span class="badge @(d.IsActive ? "bg-success" : "bg-secondary")">@(d.IsActive ? "Active" : "Inactive")</span>
-        </div>
-        <div class="card-body">
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                @foreach (var u in d.UnitOfMeasures)
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Division</th><th>Description</th><th>Categories</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model.Divisions)
                 {
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge @(u.IsDefault ? "bg-primary" : "bg-light text-dark border") py-2 px-3">
-                            @u.UnitName @(u.IsDefault ? "(Default)" : "")
-                        </span>
+                    <tr>
+                        <td class="fw-semibold">@d.Name</td>
+                        <td class="text-muted small">@d.Description</td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var c in d.Categories.Where(c => c.IsActive).OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name))
+                                {
+                                    <span class="badge bg-light text-dark border">@c.Name</span>
+                                }
+                                @if (!d.Categories.Any(c => c.IsActive))
+                                {
+                                    <span class="text-muted small">—</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge @(d.IsActive ? "bg-success" : "bg-secondary")">
+                                @(d.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editDivModal-@d.Id">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form method="post" asp-page-handler="ToggleDivision" class="d-inline">
+                                <input type="hidden" name="id" value="@d.Id" />
+                                <button type="submit" class="btn btn-sm @(d.IsActive ? "btn-outline-warning" : "btn-outline-success") ms-1">
+                                    <i class="bi @(d.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editDivModal-@d.Id" tabindex="-1">
+                        <div class="modal-dialog"><div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Edit Division — @d.Name</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="post" asp-page-handler="EditDivision">
+                                <div class="modal-body">
+                                    <input type="hidden" name="Id" value="@d.Id" />
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Division Name</label>
+                                        <input name="Name" value="@d.Name" class="form-control" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Description</label>
+                                        <input name="Description" value="@d.Description" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                                </div>
+                            </form>
+                        </div></div>
                     </div>
                 }
-            </div>
-            <div class="mt-3">
-                <form method="post" asp-page-handler="AddUnit" class="row g-2 align-items-end">
-                    <input type="hidden" name="divisionId" value="@d.Id" />
-                    <div class="col-auto">
-                        <label class="form-label fw-semibold small mb-1">Add Unit</label>
-                        <input name="unitName" class="form-control form-control-sm" placeholder="e.g. Quarter Set" style="width:160px" required />
-                    </div>
-                    <div class="col-auto">
-                        <div class="form-check mb-2">
-                            <input type="checkbox" name="isDefault" value="true" class="form-check-input" id="def-@d.Id" />
-                            <label class="form-check-label small" for="def-@d.Id">Default</label>
-                        </div>
-                    </div>
-                    <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary">Add Unit</button></div>
-                </form>
-            </div>
-        </div>
+                @if (!Model.Divisions.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">No divisions yet.</td></tr>
+                }
+            </tbody>
+        </table>
     </div>
-}
+</div>
+
+<!-- Add Division Modal -->
+<div class="modal fade" id="addDivisionModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Add Division</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" asp-page-handler="AddDivision">
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Division Name <span class="text-danger">*</span></label>
+                    <input name="Name" class="form-control" placeholder="e.g. Silk, Khadi" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Description</label>
+                    <input name="Description" class="form-control" placeholder="Brief description" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm">Create Division</button>
+            </div>
+        </form>
+    </div></div>
+</div>

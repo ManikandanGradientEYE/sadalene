@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sadalene.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Sadalene.Infrastructure.Data;
 namespace Sadalene.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260702091155_AddPackingTypeMaster")]
+    partial class AddPackingTypeMaster
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -337,55 +340,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.HasIndex("OrderId");
 
                     b.ToTable("Invoices", (string)null);
-                });
-
-            modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryAdjustmentLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AdjustedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AdjustedBy")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("AdjustmentType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<decimal>("NewQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<decimal>("PreviousQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdjustedAt");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("InventoryAdjustmentLogs", (string)null);
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryRecord", b =>
@@ -1071,17 +1025,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryAdjustmentLog", b =>
-                {
-                    b.HasOne("Sadalene.Core.Entities.Products.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryRecord", b =>

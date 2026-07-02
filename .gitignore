@@ -1,10 +1,48 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+# Build output
+bin/
+obj/
 
-/Sadalene.Admin/obj/Release/net10.0/compressed/0c7mau0pgg-{0}-61n19gt1b8-61n19gt1b8.gz
-/Sadalene.Admin/obj/Release/net10.0/compressed/z9tuy577s9-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
-/Sadalene.Admin/obj/Release/net10.0/compressed/xxvsmzlleq-{0}-0j3bgjxly4-0j3bgjxly4.gz
-/Sadalene.Admin/obj/Release/net10.0/compressed/xxh06cmq1d-{0}-lzl9nlhx6b-lzl9nlhx6b.gz
-/Sadalene.Admin/obj/Release/net10.0/compressed/wqgwt6ue7a-{0}-4v8eqarkd7-4v8eqarkd7.gz
-/Sadalene.Admin/obj/Release/net10.0/compressed/wqbx09st3z-{0}-y7v9cxd14o-y7v9cxd14o.gz
+# Visual Studio local files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet packages (restored automatically)
+packages/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Publish output
+publish/
+**/publish/
+
+# ASP.NET Core runtime
+Temporary ASP.NET Files/
+*.log
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment / secrets
+appsettings.Production.json
+.env
+*.pfx
+*.key
+
+# Static asset cache
+wwwroot/.cache/
+
+# Entity Framework migrations designer snapshots (keep .cs, ignore .Designer.cs if desired)
+# Uncomment below if you want to exclude migration designer files:
+# **/Migrations/*.Designer.cs

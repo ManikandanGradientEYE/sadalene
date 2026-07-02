@@ -11,6 +11,8 @@ public class SubCategory : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
+    public int? UomMasterId { get; set; }
+    public UomMaster? UomMaster { get; set; }
     public int DisplayOrder { get; set; } = 0;
 
     public ICollection<Product> Products { get; set; } = [];

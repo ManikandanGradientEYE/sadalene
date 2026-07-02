@@ -10,79 +10,212 @@
     <h5 class="mb-0 fw-bold">Add Product</h5>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+<form method="post" enctype="multipart/form-data">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+    <!-- Classification -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-diagram-3 me-2"></i>Classification</div>
+        <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-8">
-                    <label asp-for="Input.Name" class="form-label fw-semibold">Product Name</label>
-                    <input asp-for="Input.Name" class="form-control" />
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Division <span class="text-danger">*</span></label>
+                    <select asp-for="Input.DivisionId" id="divisionSelect" class="form-select" asp-items="Model.Divisions">
+                        <option value="">— Select Division —</option>
+                    </select>
+                    <span asp-validation-for="Input.DivisionId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                    <select asp-for="Input.CategoryId" id="categorySelect" class="form-select">
+                        <option value="">— Select Division first —</option>
+                    </select>
+                    <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Sub-Category <span class="text-danger">*</span></label>
+                    <select asp-for="Input.SubCategoryId" id="subCategorySelect" class="form-select">
+                        <option value="">— Select Category first —</option>
+                    </select>
+                    <span asp-validation-for="Input.SubCategoryId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Product Type <span class="text-danger">*</span></label>
+                    <select asp-for="Input.ProductTypeId" class="form-select" asp-items="Model.ProductTypes">
+                        <option value="">— Select Type —</option>
+                    </select>
+                    <span asp-validation-for="Input.ProductTypeId" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Identity -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-tag me-2"></i>Product Identity</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">SKU / Product Code</label>
+                    <input asp-for="Input.ProductCode" class="form-control" placeholder="Leave blank to auto-generate" />
+                    <div class="form-text"><i class="bi bi-magic me-1"></i>Auto-generated as <strong>SD00001</strong> format if left blank.</div>
+                    <span asp-validation-for="Input.ProductCode" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Product Name (Mill) <span class="text-danger">*</span></label>
+                    <input asp-for="Input.Name" class="form-control" placeholder="Name used at Bhiwandi/Mill" />
                     <span asp-validation-for="Input.Name" class="text-danger small"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="Input.ProductCode" class="form-label fw-semibold">Product Code</label>
-                    <input asp-for="Input.ProductCode" class="form-control" />
+                    <label class="form-label fw-semibold">Market Name</label>
+                    <input asp-for="Input.MarketName" class="form-control" placeholder="Customer-facing / Mumbai name" />
                 </div>
-                <div class="col-md-4">
-                    <label asp-for="Input.CategoryId" class="form-label fw-semibold">Category</label>
-                    <select asp-for="Input.CategoryId" class="form-select" id="catSelect" asp-items="Model.Categories"></select>
-                    <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Design No.</label>
+                    <input asp-for="Input.DesignNo" class="form-control" placeholder="e.g. 27009" />
                 </div>
-                <div class="col-md-4">
-                    <label asp-for="Input.SubCategoryId" class="form-label fw-semibold">Sub-Category</label>
-                    <select asp-for="Input.SubCategoryId" class="form-select" asp-items="Model.SubCategories"></select>
-                    <span asp-validation-for="Input.SubCategoryId" class="text-danger small"></span>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Grade</label>
+                    <input asp-for="Input.Grade" class="form-control" placeholder="e.g. Fresh" />
                 </div>
-                <div class="col-md-4">
-                    <label asp-for="Input.ProductTypeId" class="form-label fw-semibold">Product Type</label>
-                    <select asp-for="Input.ProductTypeId" class="form-select" asp-items="Model.ProductTypes"></select>
+                <div class="col-md-7">
+                    <label class="form-label fw-semibold">Description</label>
+                    <input asp-for="Input.Description" class="form-control" placeholder="e.g. Magic Checks Shirting" />
                 </div>
-                <div class="col-md-4">
-                    <label asp-for="Input.DivisionId" class="form-label fw-semibold">Division</label>
-                    <select asp-for="Input.DivisionId" class="form-select" asp-items="Model.Divisions"></select>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="Input.Brand" class="form-label fw-semibold">Brand</label>
-                    <input asp-for="Input.Brand" class="form-control" />
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="Input.Color" class="form-label fw-semibold">Color</label>
-                    <input asp-for="Input.Color" class="form-control" />
-                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Pricing & UOM -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-currency-rupee me-2"></i>Pricing & Unit of Measure</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Unit of Measure (UOM)</label>
+                    <select asp-for="Input.UomMasterId" id="uomSelect" class="form-select" asp-items="Model.UomList">
+                        <option value="0">— Auto from Sub-Category —</option>
+                    </select>
+                    <div class="form-text">Auto-selected from Sub-Category. You can override.</div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Rate</label>
+                    <input asp-for="Input.Rate" class="form-control" type="number" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Rate Per</label>
+                    <input asp-for="Input.RatePer" class="form-control" placeholder="Piece / Meter / Box" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Cut</label>
+                    <input asp-for="Input.Cut" class="form-control" type="number" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Qty Per Unit</label>
+                    <input asp-for="Input.QtyPerUnit" class="form-control" type="number" step="0.001" placeholder="e.g. 18" />
+                </div>
                 <div class="col-md-4">
-                    <label asp-for="Input.FabricComposition" class="form-label fw-semibold">Fabric Composition</label>
+                    <label class="form-label fw-semibold">Packing Type</label>
+                    <select asp-for="Input.PackingTypeId" class="form-select" asp-items="Model.PackingTypes">
+                        <option value="0">— Select —</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fabric Specs -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-patch-check me-2"></i>Fabric Specifications</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Fabric Composition</label>
                     <input asp-for="Input.FabricComposition" class="form-control" placeholder="e.g. 100% Cotton" />
                 </div>
-                <div class="col-md-3">
-                    <label asp-for="Input.Width" class="form-label fw-semibold">Width</label>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Width</label>
                     <input asp-for="Input.Width" class="form-control" placeholder="e.g. 44 inches" />
                 </div>
-                <div class="col-md-3">
-                    <label asp-for="Input.Weight" class="form-label fw-semibold">Weight</label>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Weight</label>
                     <input asp-for="Input.Weight" class="form-control" placeholder="e.g. 180 GSM" />
                 </div>
-                <div class="col-md-3">
-                    <label asp-for="Input.Design" class="form-label fw-semibold">Design</label>
-                    <input asp-for="Input.Design" class="form-control" />
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Color</label>
+                    <input asp-for="Input.Color" class="form-control" />
                 </div>
                 <div class="col-md-3">
-                    <label asp-for="Input.DisplayOrder" class="form-label fw-semibold">Display Order</label>
-                    <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
+                    <label class="form-label fw-semibold">Design</label>
+                    <input asp-for="Input.Design" class="form-control" placeholder="Design pattern name" />
                 </div>
-                <div class="col-12">
-                    <label asp-for="Input.Description" class="form-label fw-semibold">Description</label>
-                    <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Brand</label>
+                    <input asp-for="Input.Brand" class="form-control" />
                 </div>
-                <div class="col-md-6">
+            </div>
+        </div>
+    </div>
+
+    <!-- Other -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-image me-2"></i>Other</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-5">
                     <label class="form-label fw-semibold">Product Image</label>
                     <input type="file" name="ImageFile" class="form-control" accept="image/*" />
                 </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Display Order</label>
+                    <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary mt-3"><i class="bi bi-check-lg me-2"></i>Create Product</button>
-        </form>
+        </div>
     </div>
-</div>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Create Product</button>
+    <a asp-page="Index" class="btn btn-secondary ms-2">Cancel</a>
+</form>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+    const divSel  = document.getElementById('divisionSelect');
+    const catSel  = document.getElementById('categorySelect');
+    const subSel  = document.getElementById('subCategorySelect');
+    const uomSel  = document.getElementById('uomSelect');
+
+    divSel.addEventListener('change', async () => {
+        catSel.innerHTML = '<option value="">Loading...</option>';
+        subSel.innerHTML = '<option value="">— Select Category first —</option>';
+
+        const divId = divSel.value;
+        if (!divId) { catSel.innerHTML = '<option value="">— Select Division first —</option>'; return; }
+
+        const data = await fetch(`/api/master/categories?divisionId=${divId}`).then(r => r.json());
+        catSel.innerHTML = '<option value="">— Select Category —</option>';
+        data.forEach(c => catSel.add(new Option(c.name, c.id)));
+    });
+
+    catSel.addEventListener('change', async () => {
+        subSel.innerHTML = '<option value="">Loading...</option>';
+        const catId = catSel.value;
+        if (!catId) { subSel.innerHTML = '<option value="">— Select Category first —</option>'; return; }
+
+        const data = await fetch(`/api/master/subcategories?categoryId=${catId}`).then(r => r.json());
+        subSel.innerHTML = '<option value="">— Select Sub-Category —</option>';
+        data.forEach(s => {
+            const opt = new Option(s.name, s.id);
+            opt.dataset.uomMasterId = s.uomMasterId ?? '';
+            subSel.add(opt);
+        });
+    });
+
+    subSel.addEventListener('change', () => {
+        const selected = subSel.options[subSel.selectedIndex];
+        const uomId = selected?.dataset?.uomMasterId ?? '';
+        if (uomId) uomSel.value = uomId;
+    });
+</script>
+}

@@ -23,7 +23,9 @@ public class LoginModel : PageModel
 
     public class InputModel
     {
-        [Required] public string Phone { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Phone number or email is required.")]
+        public string PhoneOrEmail { get; set; } = string.Empty;
+
         [Required] public string Password { get; set; } = string.Empty;
     }
 
@@ -31,12 +33,13 @@ public class LoginModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
+        var login = Input.PhoneOrEmail.Trim();
         var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Phone == Input.Phone && u.IsActive);
+            .FirstOrDefaultAsync(u => u.IsActive && (u.Phone == login || u.Email == login));
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(Input.Password, user.PasswordHash))
         {
-            ModelState.AddModelError(string.Empty, "Invalid phone number or password.");
+            ModelState.AddModelError(string.Empty, "Invalid credentials.");
             return Page();
         }
 

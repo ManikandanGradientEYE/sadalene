@@ -1,16 +1,14 @@
 using Sadalene.Core.Common;
+using Sadalene.Core.Entities.Products;
 
 namespace Sadalene.Core.Entities.Masters;
 
-public class Category : BaseEntity
+public class UomMaster : BaseEntity
 {
-    public int DivisionId { get; set; }
-    public Division Division { get; set; } = null!;
-
     public string Name { get; set; } = string.Empty;
+    public string? Abbreviation { get; set; }
     public string? Description { get; set; }
-    public string? ImageUrl { get; set; }
-    public int DisplayOrder { get; set; } = 0;
 
     public ICollection<SubCategory> SubCategories { get; set; } = [];
+    public ICollection<Product> Products { get; set; } = [];
 }

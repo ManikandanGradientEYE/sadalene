@@ -16,12 +16,12 @@
             <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
 
             <div class="mb-3">
-                <label asp-for="Input.Phone" class="form-label fw-semibold">Phone Number</label>
+                <label asp-for="Input.PhoneOrEmail" class="form-label fw-semibold">Phone Number or Email</label>
                 <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-phone"></i></span>
-                    <input asp-for="Input.Phone" class="form-control" placeholder="Enter phone number" />
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input asp-for="Input.PhoneOrEmail" class="form-control" placeholder="Enter phone or email" />
                 </div>
-                <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                <span asp-validation-for="Input.PhoneOrEmail" class="text-danger small"></span>
             </div>
 
             <div class="mb-4">

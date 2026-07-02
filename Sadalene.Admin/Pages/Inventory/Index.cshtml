@@ -8,8 +8,8 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0 fw-bold"><i class="bi bi-boxes me-2"></i>Inventory</h5>
     <form method="post" asp-page-handler="Sync">
-        <button class="btn btn-success btn-sm" type="submit">
-            <i class="bi bi-arrow-repeat me-1"></i>Run Sync Now
+        <button class="btn btn-outline-success btn-sm" type="submit">
+            <i class="bi bi-arrow-repeat me-1"></i>Run Sync
         </button>
     </form>
 </div>
@@ -24,66 +24,111 @@
     </div>
 }
 
-<div class="row g-3 mb-3">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header fw-semibold">Manual Stock Update</div>
-            <div class="card-body">
-                <form method="post" asp-page-handler="UpdateStock">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold">Product</label>
-                            <select name="productId" class="form-select form-select-sm">
-                                @foreach (var p in Model.Products)
-                                {
-                                    <option value="@p.Id">@p.Name (@p.Division.Name)</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-3">
-                            <label class="form-label small fw-semibold">Qty</label>
-                            <input name="quantity" type="number" step="0.001" class="form-control form-control-sm" placeholder="0" />
-                        </div>
-                        <div class="col-3">
-                            <label class="form-label small fw-semibold">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary btn-sm d-block w-100">Update</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
+<!-- Stock Levels -->
+<div class="card mb-4">
+    <div class="card-header fw-semibold py-2">
+        <i class="bi bi-table me-2"></i>Current Stock Levels
+        <span class="badge bg-secondary ms-2">@Model.Inventory.Count products</span>
+        @{
+            var outOfStock = Model.Inventory.Count(i => i.QuantityAvailable == 0);
+        }
+        @if (outOfStock > 0)
+        {
+            <span class="badge bg-danger ms-1">@outOfStock out of stock</span>
+        }
     </div>
-</div>
-
-<div class="card">
-    <div class="card-header fw-semibold">Current Stock Levels</div>
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
-                <tr><th>Product</th><th>Division</th><th>Quantity</th><th>Unit</th><th>Last Synced</th></tr>
+                <tr>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Division</th>
+                    <th class="text-end">Qty Available</th>
+                    <th>UOM</th>
+                    <th>Last Updated</th>
+                    <th>Source</th>
+                    <th></th>
+                </tr>
             </thead>
             <tbody>
                 @foreach (var inv in Model.Inventory)
                 {
+                    var isZero = inv.QuantityAvailable == 0;
                     <tr>
+                        <td class="text-muted small font-monospace">@inv.Product.ProductCode</td>
                         <td class="fw-semibold">@inv.Product.Name</td>
-                        <td><span class="badge bg-secondary">@inv.Product.Division.Name</span></td>
-                        <td class="@(inv.QuantityAvailable == 0 ? "text-danger fw-bold" : "")">@inv.QuantityAvailable.ToString("N2")</td>
-                        <td class="text-muted">@inv.UnitOfMeasure</td>
-                        <td class="text-muted small">@inv.LastSyncedAt.ToString("dd MMM yyyy HH:mm")</td>
+                        <td><span class="badge bg-secondary bg-opacity-75">@inv.Product.Division.Name</span></td>
+                        <td class="text-end @(isZero ? "text-danger fw-bold" : "fw-semibold")">
+                            @inv.QuantityAvailable.ToString("N2")
+                        </td>
+                        <td class="text-muted small">@(inv.Product.UomMaster?.Name ?? inv.UnitOfMeasure)</td>
+                        <td class="text-muted small">@inv.LastSyncedAt.ToString("dd MMM yy HH:mm")</td>
+                        <td>
+                            <span class="badge @(inv.SyncSource == "Manual" ? "bg-warning text-dark" : "bg-light text-dark border") small">
+                                @inv.SyncSource
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal" data-bs-target="#adjustModal"
+                                    data-product-id="@inv.ProductId"
+                                    data-product-name="@inv.Product.Name"
+                                    data-current-qty="@inv.QuantityAvailable.ToString("N2")"
+                                    data-uom="@(inv.Product.UomMaster?.Name ?? inv.UnitOfMeasure)">
+                                <i class="bi bi-sliders me-1"></i>Adjust
+                            </button>
+                        </td>
                     </tr>
                 }
                 @if (!Model.Inventory.Any())
                 {
-                    <tr><td colspan="5" class="text-center text-muted py-3">No inventory records. Add products and sync.</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-4">No inventory records yet. Create products to initialise stock.</td></tr>
                 }
             </tbody>
         </table>
     </div>
 </div>
 
-<div class="card mt-3">
-    <div class="card-header fw-semibold">Sync History</div>
+<!-- Adjustment Log -->
+<div class="card mb-4">
+    <div class="card-header fw-semibold py-2"><i class="bi bi-clock-history me-2"></i>Adjustment History <span class="text-muted small fw-normal">(last 30)</span></div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 small">
+            <thead class="table-light">
+                <tr><th>Date / Time</th><th>Product</th><th>Type</th><th class="text-end">Qty</th><th class="text-end">Before</th><th class="text-end">After</th><th>Reason</th><th>By</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.AdjustmentLogs)
+                {
+                    var (icon, cls) = log.AdjustmentType switch {
+                        "Add"      => ("bi-plus-circle-fill", "text-success"),
+                        "Subtract" => ("bi-dash-circle-fill", "text-danger"),
+                        _          => ("bi-pencil-fill",      "text-primary")
+                    };
+                    <tr>
+                        <td class="text-muted">@log.AdjustedAt.ToString("dd MMM yy HH:mm")</td>
+                        <td class="fw-semibold">@log.Product.Name</td>
+                        <td><span class="@cls"><i class="bi @icon me-1"></i>@log.AdjustmentType</span></td>
+                        <td class="text-end">@log.Quantity.ToString("N2")</td>
+                        <td class="text-end text-muted">@log.PreviousQuantity.ToString("N2")</td>
+                        <td class="text-end fw-semibold">@log.NewQuantity.ToString("N2")</td>
+                        <td class="text-muted">@log.Reason</td>
+                        <td class="text-muted">@log.AdjustedBy</td>
+                    </tr>
+                }
+                @if (!Model.AdjustmentLogs.Any())
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-3">No adjustments recorded yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Sync History -->
+<div class="card">
+    <div class="card-header fw-semibold py-2"><i class="bi bi-arrow-repeat me-2"></i>Sync History</div>
     <div class="card-body p-0">
         <table class="table table-hover mb-0 small">
             <thead class="table-light">
@@ -94,7 +139,7 @@
                 {
                     var duration = log.SyncCompletedAt.HasValue ? (log.SyncCompletedAt.Value - log.SyncStartedAt).TotalSeconds : 0;
                     <tr>
-                        <td>@log.SyncStartedAt.ToString("dd MMM yyyy HH:mm")</td>
+                        <td>@log.SyncStartedAt.ToString("dd MMM yy HH:mm")</td>
                         <td class="text-muted">@duration.ToString("N1")s</td>
                         <td>@(log.RecordsUpdated?.ToString() ?? "—")</td>
                         <td>@log.TriggeredBy</td>
@@ -105,3 +150,83 @@
         </table>
     </div>
 </div>
+
+<!-- Shared Adjust Modal -->
+<div class="modal fade" id="adjustModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-sliders me-2"></i>Adjust Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="Adjust">
+                <div class="modal-body">
+                    <input type="hidden" name="productId" id="adjustProductId" />
+
+                    <div class="mb-3">
+                        <div class="fw-semibold" id="adjustProductName"></div>
+                        <div class="text-muted small">
+                            Current stock: <strong id="adjustCurrentQty"></strong>
+                            <span id="adjustUom" class="ms-1 text-info"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Adjustment Type</label>
+                        <div class="d-flex gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="adjustType" id="typeAdd" value="Add" checked />
+                                <label class="form-check-label text-success fw-semibold" for="typeAdd">
+                                    <i class="bi bi-plus-circle"></i> Add
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="adjustType" id="typeSub" value="Subtract" />
+                                <label class="form-check-label text-danger fw-semibold" for="typeSub">
+                                    <i class="bi bi-dash-circle"></i> Subtract
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="adjustType" id="typeSet" value="Set" />
+                                <label class="form-check-label text-primary fw-semibold" for="typeSet">
+                                    <i class="bi bi-pencil"></i> Set to
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Quantity <span id="adjustTypeLabel" class="text-muted fw-normal"></span></label>
+                        <input type="number" name="quantity" class="form-control" step="0.001" min="0" required placeholder="0" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Reason <span class="text-muted fw-normal small">(optional)</span></label>
+                        <input type="text" name="reason" class="form-control" placeholder="e.g. Physical count, Purchase receipt, Damaged" maxlength="500" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-lg me-1"></i>Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('adjustModal').addEventListener('show.bs.modal', function (e) {
+        const btn = e.relatedTarget;
+        document.getElementById('adjustProductId').value  = btn.dataset.productId;
+        document.getElementById('adjustProductName').textContent = btn.dataset.productName;
+        document.getElementById('adjustCurrentQty').textContent  = btn.dataset.currentQty;
+        document.getElementById('adjustUom').textContent         = btn.dataset.uom;
+
+        // Reset form
+        document.getElementById('typeAdd').checked = true;
+        document.querySelector('[name="quantity"]').value = '';
+        document.querySelector('[name="reason"]').value = '';
+    });
+</script>
+}

@@ -98,6 +98,12 @@
         <a class="nav-link @(ViewData["ActiveMenu"]?.ToString() == "ProductTypes" ? "active" : "")" asp-page="/Masters/ProductTypes/Index">
             <i class="bi bi-list-ul"></i> Product Types
         </a>
+        <a class="nav-link @(ViewData["ActiveMenu"]?.ToString() == "PackingTypes" ? "active" : "")" asp-page="/Masters/PackingTypes/Index">
+            <i class="bi bi-box-seam"></i> Packing Types
+        </a>
+        <a class="nav-link @(ViewData["ActiveMenu"]?.ToString() == "UomMaster" ? "active" : "")" asp-page="/Masters/Uom/Index">
+            <i class="bi bi-rulers"></i> Unit of Measure
+        </a>
     </div>
 </nav>
 

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sadalene.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Sadalene.Infrastructure.Data;
 namespace Sadalene.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260702083822_AddProductFields")]
+    partial class AddProductFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -339,55 +342,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.ToTable("Invoices", (string)null);
                 });
 
-            modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryAdjustmentLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AdjustedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AdjustedBy")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("AdjustmentType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<decimal>("NewQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<decimal>("PreviousQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdjustedAt");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("InventoryAdjustmentLogs", (string)null);
-                });
-
             modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -578,7 +532,7 @@ namespace Sadalene.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Sadalene.Core.Entities.Masters.PackingType", b =>
+            modelBuilder.Entity("Sadalene.Core.Entities.Masters.DivisionUnitOfMeasure", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -589,27 +543,75 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<int>("DivisionId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Name")
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UnitName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.HasIndex("DivisionId");
 
-                    b.ToTable("PackingTypes", (string)null);
+                    b.ToTable("DivisionUnitOfMeasures", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DivisionId = 1,
+                            IsActive = true,
+                            IsDefault = true,
+                            UnitName = "Full Set"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DivisionId = 1,
+                            IsActive = true,
+                            IsDefault = false,
+                            UnitName = "Half Set"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DivisionId = 2,
+                            IsActive = true,
+                            IsDefault = true,
+                            UnitName = "Taka"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DivisionId = 3,
+                            IsActive = true,
+                            IsDefault = true,
+                            UnitName = "No. of Boxes"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DivisionId = 4,
+                            IsActive = true,
+                            IsDefault = true,
+                            UnitName = "Meters"
+                        });
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Masters.ProductType", b =>
@@ -679,58 +681,18 @@ namespace Sadalene.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<int?>("UomMasterId")
-                        .HasColumnType("int");
+                    b.Property<string>("UnitOfMeasure")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UomMasterId");
 
                     b.HasIndex("CategoryId", "Name")
                         .IsUnique();
 
                     b.ToTable("SubCategories", (string)null);
-                });
-
-            modelBuilder.Entity("Sadalene.Core.Entities.Masters.UomMaster", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Abbreviation")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("UomMasters", (string)null);
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Orders.Order", b =>
@@ -913,8 +875,9 @@ namespace Sadalene.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int?>("PackingTypeId")
-                        .HasColumnType("int");
+                    b.Property<string>("PackingType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ProductCode")
                         .HasMaxLength(50)
@@ -938,8 +901,9 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Property<int>("SubCategoryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UomMasterId")
-                        .HasColumnType("int");
+                    b.Property<string>("UnitOfMeasure")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -962,8 +926,6 @@ namespace Sadalene.Infrastructure.Migrations
 
                     b.HasIndex("DivisionId");
 
-                    b.HasIndex("PackingTypeId");
-
                     b.HasIndex("ProductCode")
                         .IsUnique()
                         .HasFilter("[ProductCode] IS NOT NULL");
@@ -971,8 +933,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.HasIndex("ProductTypeId");
 
                     b.HasIndex("SubCategoryId");
-
-                    b.HasIndex("UomMasterId");
 
                     b.ToTable("Products", (string)null);
                 });
@@ -1073,17 +1033,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryAdjustmentLog", b =>
-                {
-                    b.HasOne("Sadalene.Core.Entities.Products.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryRecord", b =>
                 {
                     b.HasOne("Sadalene.Core.Entities.Products.Product", "Product")
@@ -1106,6 +1055,17 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Navigation("Division");
                 });
 
+            modelBuilder.Entity("Sadalene.Core.Entities.Masters.DivisionUnitOfMeasure", b =>
+                {
+                    b.HasOne("Sadalene.Core.Entities.Masters.Division", "Division")
+                        .WithMany("UnitOfMeasures")
+                        .HasForeignKey("DivisionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Division");
+                });
+
             modelBuilder.Entity("Sadalene.Core.Entities.Masters.SubCategory", b =>
                 {
                     b.HasOne("Sadalene.Core.Entities.Masters.Category", "Category")
@@ -1114,14 +1074,7 @@ namespace Sadalene.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Sadalene.Core.Entities.Masters.UomMaster", "UomMaster")
-                        .WithMany("SubCategories")
-                        .HasForeignKey("UomMasterId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Category");
-
-                    b.Navigation("UomMaster");
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Orders.Order", b =>
@@ -1182,11 +1135,6 @@ namespace Sadalene.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Sadalene.Core.Entities.Masters.PackingType", "PackingType")
-                        .WithMany("Products")
-                        .HasForeignKey("PackingTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Sadalene.Core.Entities.Masters.ProductType", "ProductType")
                         .WithMany("Products")
                         .HasForeignKey("ProductTypeId")
@@ -1199,22 +1147,13 @@ namespace Sadalene.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Sadalene.Core.Entities.Masters.UomMaster", "UomMaster")
-                        .WithMany("Products")
-                        .HasForeignKey("UomMasterId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Category");
 
                     b.Navigation("Division");
 
-                    b.Navigation("PackingType");
-
                     b.Navigation("ProductType");
 
                     b.Navigation("SubCategory");
-
-                    b.Navigation("UomMaster");
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Products.ProductImage", b =>
@@ -1261,11 +1200,8 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Navigation("Categories");
 
                     b.Navigation("Products");
-                });
 
-            modelBuilder.Entity("Sadalene.Core.Entities.Masters.PackingType", b =>
-                {
-                    b.Navigation("Products");
+                    b.Navigation("UnitOfMeasures");
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Masters.ProductType", b =>
@@ -1276,13 +1212,6 @@ namespace Sadalene.Infrastructure.Migrations
             modelBuilder.Entity("Sadalene.Core.Entities.Masters.SubCategory", b =>
                 {
                     b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("Sadalene.Core.Entities.Masters.UomMaster", b =>
-                {
-                    b.Navigation("Products");
-
-                    b.Navigation("SubCategories");
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Orders.Order", b =>

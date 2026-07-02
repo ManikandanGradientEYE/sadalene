@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sadalene.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Sadalene.Infrastructure.Data;
 namespace Sadalene.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260702090031_RemoveDivisionUnitOfMeasure")]
+    partial class RemoveDivisionUnitOfMeasure
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -339,55 +342,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.ToTable("Invoices", (string)null);
                 });
 
-            modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryAdjustmentLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AdjustedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AdjustedBy")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("AdjustmentType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<decimal>("NewQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<decimal>("PreviousQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdjustedAt");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("InventoryAdjustmentLogs", (string)null);
-                });
-
             modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -576,40 +530,6 @@ namespace Sadalene.Infrastructure.Migrations
                             IsActive = true,
                             Name = "Make to Order"
                         });
-                });
-
-            modelBuilder.Entity("Sadalene.Core.Entities.Masters.PackingType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("PackingTypes", (string)null);
                 });
 
             modelBuilder.Entity("Sadalene.Core.Entities.Masters.ProductType", b =>
@@ -913,8 +833,9 @@ namespace Sadalene.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int?>("PackingTypeId")
-                        .HasColumnType("int");
+                    b.Property<string>("PackingType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ProductCode")
                         .HasMaxLength(50)
@@ -961,8 +882,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("DivisionId");
-
-                    b.HasIndex("PackingTypeId");
 
                     b.HasIndex("ProductCode")
                         .IsUnique()
@@ -1073,17 +992,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryAdjustmentLog", b =>
-                {
-                    b.HasOne("Sadalene.Core.Entities.Products.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("Sadalene.Core.Entities.Inventory.InventoryRecord", b =>
                 {
                     b.HasOne("Sadalene.Core.Entities.Products.Product", "Product")
@@ -1182,11 +1090,6 @@ namespace Sadalene.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Sadalene.Core.Entities.Masters.PackingType", "PackingType")
-                        .WithMany("Products")
-                        .HasForeignKey("PackingTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Sadalene.Core.Entities.Masters.ProductType", "ProductType")
                         .WithMany("Products")
                         .HasForeignKey("ProductTypeId")
@@ -1207,8 +1110,6 @@ namespace Sadalene.Infrastructure.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Division");
-
-                    b.Navigation("PackingType");
 
                     b.Navigation("ProductType");
 
@@ -1260,11 +1161,6 @@ namespace Sadalene.Infrastructure.Migrations
                 {
                     b.Navigation("Categories");
 
-                    b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("Sadalene.Core.Entities.Masters.PackingType", b =>
-                {
                     b.Navigation("Products");
                 });
 

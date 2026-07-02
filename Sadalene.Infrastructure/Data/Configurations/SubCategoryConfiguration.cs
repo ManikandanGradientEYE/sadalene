@@ -14,6 +14,7 @@ public class SubCategoryConfiguration : IEntityTypeConfiguration<SubCategory>
         builder.Property(x => x.Name).HasMaxLength(150).IsRequired();
         builder.Property(x => x.Description).HasMaxLength(500);
         builder.Property(x => x.ImageUrl).HasMaxLength(500);
+        builder.Property(x => x.UomMasterId).IsRequired(false);
 
         builder.HasIndex(x => new { x.CategoryId, x.Name }).IsUnique();
 
