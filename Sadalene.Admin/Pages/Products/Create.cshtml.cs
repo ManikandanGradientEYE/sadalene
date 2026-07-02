@@ -54,6 +54,9 @@ public class CreateModel : PageModel
         public string? Brand { get; set; }
 
         public int DisplayOrder { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Initial Stock must be 0 or greater.")]
+        public decimal? InitialStock { get; set; }
     }
 
     public async Task OnGetAsync()
@@ -121,20 +124,37 @@ public class CreateModel : PageModel
             product.ProductCode = $"SD{product.Id:D5}";
         }
 
-        // Bootstrap inventory record at zero stock
+        // Bootstrap inventory record with optional initial stock
         var uomName = await _db.UomMasters
             .Where(u => u.Id == product.UomMasterId)
             .Select(u => u.Name)
             .FirstOrDefaultAsync() ?? "Units";
 
+        var initialQty = Input.InitialStock ?? 0;
+
         _db.InventoryRecords.Add(new InventoryRecord
         {
             ProductId         = product.Id,
-            QuantityAvailable = 0,
+            QuantityAvailable = initialQty,
             UnitOfMeasure     = uomName,
             LastSyncedAt      = DateTime.UtcNow,
-            SyncSource        = "System"
+            SyncSource        = initialQty > 0 ? "Manual" : "System"
         });
+
+        if (initialQty > 0)
+        {
+            _db.InventoryAdjustmentLogs.Add(new InventoryAdjustmentLog
+            {
+                ProductId        = product.Id,
+                AdjustmentType   = "Set",
+                Quantity         = initialQty,
+                PreviousQuantity = 0,
+                NewQuantity      = initialQty,
+                Reason           = "Initial stock on product creation",
+                AdjustedBy       = User.Identity?.Name ?? "Admin",
+                AdjustedAt       = DateTime.UtcNow
+            });
+        }
 
         await _db.SaveChangesAsync();
 
