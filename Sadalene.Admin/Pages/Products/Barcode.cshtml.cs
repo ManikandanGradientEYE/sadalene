@@ -36,10 +36,7 @@ public class BarcodeModel : PageModel
         var product = await _db.Products.FindAsync(id);
         if (product == null) return NotFound();
 
-        var imageUrl = _barcodeService.GenerateQrCode(barcodeValue, $"product-{id}");
-
         product.BarcodeValue      = barcodeValue;
-        product.BarcodeImageUrl   = imageUrl;
         product.IsBarcodeActive   = true;
         product.BarcodeGeneratedAt = DateTime.UtcNow;
         product.UpdatedAt         = DateTime.UtcNow;
@@ -47,6 +44,20 @@ public class BarcodeModel : PageModel
         await _db.SaveChangesAsync();
         TempData["Success"] = "Barcode generated successfully.";
         return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnGetImageAsync(int id, bool download = false)
+    {
+        var product = await _db.Products.FindAsync(id);
+        if (product == null || !product.IsBarcodeActive || string.IsNullOrEmpty(product.BarcodeValue))
+            return NotFound();
+
+        var pngBytes = _barcodeService.GenerateQrCode(product.BarcodeValue);
+
+        if (download)
+            return File(pngBytes, "image/png", $"barcode-{product.ProductCode ?? product.Id.ToString()}.png");
+
+        return File(pngBytes, "image/png");
     }
 
     public async Task<IActionResult> OnPostDeactivateAsync(int id)

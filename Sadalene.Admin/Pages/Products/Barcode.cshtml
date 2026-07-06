@@ -15,13 +15,13 @@
         <div class="card text-center">
             <div class="card-header fw-semibold">Current Barcode</div>
             <div class="card-body py-4">
-                @if (Model.Product.IsBarcodeActive && Model.Product.BarcodeImageUrl != null)
+                @if (Model.Product.IsBarcodeActive && Model.Product.BarcodeValue != null)
                 {
-                    <img src="@Model.Product.BarcodeImageUrl" alt="Barcode" class="img-fluid" style="max-width:220px" />
+                    <img src="@Url.Page("Barcode", "Image", new { id = Model.Product.Id })" alt="Barcode" class="img-fluid" style="max-width:220px" />
                     <div class="mt-2 text-muted small font-monospace">@Model.Product.BarcodeValue</div>
                     <div class="mt-1 text-muted small">Generated: @Model.Product.BarcodeGeneratedAt?.ToString("dd MMM yyyy HH:mm")</div>
                     <div class="d-flex gap-2 justify-content-center mt-3">
-                        <a href="@Model.Product.BarcodeImageUrl" download="barcode-@(Model.Product.ProductCode).png" class="btn btn-sm btn-success">
+                        <a href="@Url.Page("Barcode", "Image", new { id = Model.Product.Id, download = true })" class="btn btn-sm btn-success">
                             <i class="bi bi-download me-1"></i>Download
                         </a>
                         <form method="post" asp-page-handler="Deactivate" class="d-inline">
