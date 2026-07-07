@@ -14,7 +14,7 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead class="table-light">
-                <tr><th>Name</th><th>Phone</th><th>City</th><th>GST</th><th>Orders</th><th>Status</th><th></th></tr>
+                <tr><th>Name</th><th>Phone</th><th>City</th><th>GST</th><th>Agent</th><th>Orders</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var c in Model.Customers)
@@ -24,6 +24,16 @@
                         <td>@c.Phone</td>
                         <td class="text-muted">@c.City</td>
                         <td class="text-muted small">@c.GstNumber</td>
+                        <td>
+                            @if (c.Agent != null)
+                            {
+                                <span class="badge bg-info-subtle text-info-emphasis">@c.Agent.FullName</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
                         <td><span class="badge bg-primary">@c.Orders.Count</span></td>
                         <td><span class="badge @(c.IsActive ? "bg-success" : "bg-secondary")">@(c.IsActive ? "Active" : "Inactive")</span></td>
                         <td>

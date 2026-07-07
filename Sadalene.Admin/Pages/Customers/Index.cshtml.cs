@@ -13,5 +13,5 @@ public class IndexModel : PageModel
     public List<Customer> Customers { get; set; } = [];
 
     public async Task OnGetAsync() =>
-        Customers = await _db.Customers.Include(c => c.Orders).OrderBy(c => c.FullName).ToListAsync();
+        Customers = await _db.Customers.Include(c => c.Orders).Include(c => c.Agent).OrderBy(c => c.FullName).ToListAsync();
 }
