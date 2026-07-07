@@ -10,68 +10,78 @@
     <h5 class="mb-0 fw-bold">Add Agent</h5>
 </div>
 
-<div class="card" style="max-width:500px">
+<div class="card" style="max-width:1000px">
     <div class="card-body">
         <form method="post">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
-            <div class="mb-3">
-                <label asp-for="Input.FullName" class="form-label fw-semibold">Full Name</label>
-                <input asp-for="Input.FullName" class="form-control" />
-                <span asp-validation-for="Input.FullName" class="text-danger small"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.Phone" class="form-label fw-semibold">Phone</label>
-                <input asp-for="Input.Phone" class="form-control" />
-                <span asp-validation-for="Input.Phone" class="text-danger small"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.Email" class="form-label fw-semibold">Email</label>
-                <input asp-for="Input.Email" type="email" class="form-control" />
-            </div>
-            <div class="mb-4">
-                <label asp-for="Input.AgentCode" class="form-label fw-semibold">Agent Code</label>
-                <input asp-for="Input.AgentCode" class="form-control" placeholder="e.g. AGT-001" />
+            <div class="row g-3" style="max-width:500px">
+                <div class="col-12">
+                    <label asp-for="Input.FullName" class="form-label fw-semibold">Full Name</label>
+                    <input asp-for="Input.FullName" class="form-control" />
+                    <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.Phone" class="form-label fw-semibold">Phone</label>
+                    <input asp-for="Input.Phone" class="form-control" />
+                    <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.Email" class="form-label fw-semibold">Email</label>
+                    <input asp-for="Input.Email" type="email" class="form-control" />
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.AgentCode" class="form-label fw-semibold">Agent Code</label>
+                    <input asp-for="Input.AgentCode" class="form-control" placeholder="e.g. AGT-001" />
+                </div>
             </div>
 
-            <div class="form-check mb-3">
-                <input asp-for="Input.AddCustomer" class="form-check-input" type="checkbox" id="addCustomerToggle" />
-                <label asp-for="Input.AddCustomer" class="form-check-label fw-semibold">Add a customer for this agent</label>
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-semibold mb-0">Customers <span class="text-muted fw-normal">(optional — add as many as needed)</span></label>
+                <button type="button" id="addCustomerRowBtn" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-plus-lg me-1"></i>Add Customer
+                </button>
             </div>
 
-            <div id="customerFields" class="border rounded p-3 mb-4 bg-light-subtle" style="display:none">
-                <div class="mb-3">
-                    <label asp-for="Input.CustomerFullName" class="form-label fw-semibold">Customer Full Name</label>
-                    <input asp-for="Input.CustomerFullName" class="form-control" />
-                    <span asp-validation-for="Input.CustomerFullName" class="text-danger small"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Input.CustomerPhone" class="form-label fw-semibold">Customer Phone</label>
-                    <input asp-for="Input.CustomerPhone" class="form-control" />
-                    <span asp-validation-for="Input.CustomerPhone" class="text-danger small"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Input.CustomerEmail" class="form-label fw-semibold">Customer Email</label>
-                    <input asp-for="Input.CustomerEmail" type="email" class="form-control" />
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Input.CustomerAddress" class="form-label fw-semibold">Address</label>
-                    <textarea asp-for="Input.CustomerAddress" class="form-control" rows="2"></textarea>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label asp-for="Input.CustomerCity" class="form-label fw-semibold">City</label>
-                        <input asp-for="Input.CustomerCity" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Input.CustomerState" class="form-label fw-semibold">State</label>
-                        <input asp-for="Input.CustomerState" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Input.CustomerGstNumber" class="form-label fw-semibold">GST Number</label>
-                        <input asp-for="Input.CustomerGstNumber" class="form-control" />
-                    </div>
-                </div>
+            <div class="table-responsive mb-2" id="customerTableWrap" style="@(Model.Input.Customers.Count == 0 ? "display:none" : "")">
+                <table class="table table-sm align-middle mb-0" style="min-width:950px">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:16%">Full Name</th>
+                            <th style="width:12%">Phone</th>
+                            <th style="width:16%">Email</th>
+                            <th style="width:20%">Address</th>
+                            <th style="width:11%">City</th>
+                            <th style="width:11%">State</th>
+                            <th style="width:11%">GST No.</th>
+                            <th style="width:3%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerRows">
+                        @for (int i = 0; i < Model.Input.Customers.Count; i++)
+                        {
+                            <tr class="customer-row">
+                                <td>
+                                    <input asp-for="Input.Customers[i].FullName" class="form-control form-control-sm" placeholder="Full name" />
+                                    <span asp-validation-for="Input.Customers[i].FullName" class="text-danger small"></span>
+                                </td>
+                                <td>
+                                    <input asp-for="Input.Customers[i].Phone" class="form-control form-control-sm" placeholder="Phone" />
+                                    <span asp-validation-for="Input.Customers[i].Phone" class="text-danger small"></span>
+                                </td>
+                                <td><input asp-for="Input.Customers[i].Email" type="email" class="form-control form-control-sm" placeholder="Email" /></td>
+                                <td><input asp-for="Input.Customers[i].Address" class="form-control form-control-sm" placeholder="Address" /></td>
+                                <td><input asp-for="Input.Customers[i].City" class="form-control form-control-sm" placeholder="City" /></td>
+                                <td><input asp-for="Input.Customers[i].State" class="form-control form-control-sm" placeholder="State" /></td>
+                                <td><input asp-for="Input.Customers[i].GstNumber" class="form-control form-control-sm" placeholder="GST" /></td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-customer-row"><i class="bi bi-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
+            <p id="noCustomersMsg" class="text-muted small mb-4" style="@(Model.Input.Customers.Count == 0 ? "" : "display:none")">No customers added yet.</p>
 
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Create Agent</button>
         </form>
@@ -81,10 +91,50 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const addCustomerToggle = document.getElementById('addCustomerToggle');
-        const customerFields = document.getElementById('customerFields');
-        function syncCustomerFields() { customerFields.style.display = addCustomerToggle.checked ? 'block' : 'none'; }
-        addCustomerToggle.addEventListener('change', syncCustomerFields);
-        syncCustomerFields();
+        function customerRowHtml(index) {
+            return `
+                <td><input name="Input.Customers[${index}].FullName" class="form-control form-control-sm" placeholder="Full name" /></td>
+                <td><input name="Input.Customers[${index}].Phone" class="form-control form-control-sm" placeholder="Phone" /></td>
+                <td><input name="Input.Customers[${index}].Email" type="email" class="form-control form-control-sm" placeholder="Email" /></td>
+                <td><input name="Input.Customers[${index}].Address" class="form-control form-control-sm" placeholder="Address" /></td>
+                <td><input name="Input.Customers[${index}].City" class="form-control form-control-sm" placeholder="City" /></td>
+                <td><input name="Input.Customers[${index}].State" class="form-control form-control-sm" placeholder="State" /></td>
+                <td><input name="Input.Customers[${index}].GstNumber" class="form-control form-control-sm" placeholder="GST" /></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger remove-customer-row"><i class="bi bi-trash"></i></button></td>
+            `;
+        }
+
+        function renumberCustomerRows() {
+            document.querySelectorAll('#customerRows tr.customer-row').forEach((row, i) => {
+                row.querySelectorAll('[name]').forEach(el => {
+                    el.name = el.name.replace(/\[\d+\]/, '[' + i + ']');
+                });
+            });
+        }
+
+        function toggleCustomerEmptyState() {
+            const count = document.querySelectorAll('#customerRows tr.customer-row').length;
+            document.getElementById('customerTableWrap').style.display = count === 0 ? 'none' : '';
+            document.getElementById('noCustomersMsg').style.display = count === 0 ? '' : 'none';
+        }
+
+        document.getElementById('addCustomerRowBtn').addEventListener('click', function () {
+            const tbody = document.getElementById('customerRows');
+            const index = tbody.querySelectorAll('tr.customer-row').length;
+            const row = document.createElement('tr');
+            row.className = 'customer-row';
+            row.innerHTML = customerRowHtml(index);
+            tbody.appendChild(row);
+            toggleCustomerEmptyState();
+        });
+
+        document.getElementById('customerRows').addEventListener('click', function (e) {
+            const btn = e.target.closest('.remove-customer-row');
+            if (btn) {
+                btn.closest('tr').remove();
+                renumberCustomerRows();
+                toggleCustomerEmptyState();
+            }
+        });
     </script>
 }

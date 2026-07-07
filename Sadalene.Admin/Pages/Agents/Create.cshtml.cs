@@ -21,42 +21,54 @@ public class CreateModel : PageModel
         [EmailAddress] public string? Email { get; set; }
         public string? AgentCode { get; set; }
 
-        public bool AddCustomer { get; set; }
-        public string? CustomerFullName { get; set; }
-        public string? CustomerPhone { get; set; }
-        [EmailAddress] public string? CustomerEmail { get; set; }
-        public string? CustomerAddress { get; set; }
-        public string? CustomerCity { get; set; }
-        public string? CustomerState { get; set; }
-        public string? CustomerGstNumber { get; set; }
+        public List<CustomerRow> Customers { get; set; } = [];
+    }
+
+    public class CustomerRow
+    {
+        public string? FullName { get; set; }
+        public string? Phone { get; set; }
+        [EmailAddress] public string? Email { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public string? GstNumber { get; set; }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.AddCustomer)
+        // Drop rows the user left completely blank instead of forcing them to delete empty rows manually.
+        var customerRows = Input.Customers
+            .Where(c => !string.IsNullOrWhiteSpace(c.FullName) || !string.IsNullOrWhiteSpace(c.Phone))
+            .ToList();
+        Input.Customers = customerRows;
+
+        for (int i = 0; i < customerRows.Count; i++)
         {
-            if (string.IsNullOrWhiteSpace(Input.CustomerFullName))
-                ModelState.AddModelError("Input.CustomerFullName", "Customer name is required.");
-            if (string.IsNullOrWhiteSpace(Input.CustomerPhone))
-                ModelState.AddModelError("Input.CustomerPhone", "Customer phone is required.");
+            if (string.IsNullOrWhiteSpace(customerRows[i].FullName))
+                ModelState.AddModelError($"Input.Customers[{i}].FullName", $"Row {i + 1}: customer name is required.");
+            if (string.IsNullOrWhiteSpace(customerRows[i].Phone))
+                ModelState.AddModelError($"Input.Customers[{i}].Phone", $"Row {i + 1}: customer phone is required.");
         }
         if (!ModelState.IsValid) return Page();
 
         var agent = new Agent { FullName = Input.FullName, Phone = Input.Phone, Email = Input.Email, AgentCode = Input.AgentCode };
         _db.Agents.Add(agent);
 
-        if (Input.AddCustomer)
+        foreach (var c in customerRows)
         {
             _db.Customers.Add(new Customer
             {
-                FullName = Input.CustomerFullName!, Phone = Input.CustomerPhone!, Email = Input.CustomerEmail,
-                Address = Input.CustomerAddress, City = Input.CustomerCity, State = Input.CustomerState,
-                GstNumber = Input.CustomerGstNumber, Agent = agent
+                FullName = c.FullName!, Phone = c.Phone!, Email = c.Email,
+                Address = c.Address, City = c.City, State = c.State, GstNumber = c.GstNumber,
+                Agent = agent
             });
         }
 
         await _db.SaveChangesAsync();
-        TempData["Success"] = "Agent created.";
+        TempData["Success"] = customerRows.Count > 0
+            ? $"Agent created with {customerRows.Count} customer(s)."
+            : "Agent created.";
         return RedirectToPage("Index");
     }
 }
