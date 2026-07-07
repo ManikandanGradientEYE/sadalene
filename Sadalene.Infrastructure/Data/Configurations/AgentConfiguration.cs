@@ -17,6 +17,7 @@ public class AgentConfiguration : IEntityTypeConfiguration<Agent>
         builder.Property(x => x.AgentCode).HasMaxLength(20);
 
         builder.HasIndex(x => x.Phone).IsUnique();
+        builder.HasIndex(x => x.Email).IsUnique().HasFilter("[Email] IS NOT NULL");
         builder.HasIndex(x => x.AgentCode).IsUnique().HasFilter("[AgentCode] IS NOT NULL");
 
         builder.HasMany(x => x.OtpLogs)

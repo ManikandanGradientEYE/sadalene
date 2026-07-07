@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using Sadalene.Core.Entities.Auth;
 using Sadalene.Infrastructure.Data;
 
@@ -50,6 +51,10 @@ public class CreateModel : PageModel
             if (string.IsNullOrWhiteSpace(customerRows[i].Phone))
                 ModelState.AddModelError($"Input.Customers[{i}].Phone", $"Row {i + 1}: customer phone is required.");
         }
+        if (await _db.Agents.AnyAsync(x => x.Phone == Input.Phone))
+            ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
+        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Agents.AnyAsync(x => x.Email == Input.Email))
+            ModelState.AddModelError(string.Empty, "An agent with this email already exists.");
         if (!ModelState.IsValid) return Page();
 
         var agent = new Agent { FullName = Input.FullName, Phone = Input.Phone, Email = Input.Email, AgentCode = Input.AgentCode };

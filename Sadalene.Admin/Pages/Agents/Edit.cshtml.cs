@@ -55,6 +55,18 @@ public class EditModel : PageModel
     {
         ModelState.ClearValidationState(nameof(NewCustomer));
         if (!ModelState.IsValid) return await ReloadAsync(Input.Id);
+
+        if (await _db.Agents.AnyAsync(x => x.Phone == Input.Phone && x.Id != Input.Id))
+        {
+            ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
+            return await ReloadAsync(Input.Id);
+        }
+        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Agents.AnyAsync(x => x.Email == Input.Email && x.Id != Input.Id))
+        {
+            ModelState.AddModelError(string.Empty, "An agent with this email already exists.");
+            return await ReloadAsync(Input.Id);
+        }
+
         var a = await _db.Agents.FindAsync(Input.Id);
         if (a == null) return NotFound();
         a.FullName = Input.FullName; a.Phone = Input.Phone; a.Email = Input.Email;

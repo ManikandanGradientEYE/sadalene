@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using Sadalene.Infrastructure.Data;
 
 namespace Sadalene.Admin.Pages.Customers;
@@ -38,6 +39,18 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();
+
+        if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone && x.Id != Input.Id))
+        {
+            ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
+            return Page();
+        }
+        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email && x.Id != Input.Id))
+        {
+            ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
+            return Page();
+        }
+
         var c = await _db.Customers.FindAsync(Input.Id);
         if (c == null) return NotFound();
         c.FullName = Input.FullName; c.Phone = Input.Phone; c.Email = Input.Email;
