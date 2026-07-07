@@ -75,12 +75,12 @@
         </a> *@
 
         <div class="nav-section mt-2">Users</div>
-        @* <a class="nav-link @(ViewData["ActiveMenu"]?.ToString() == "Customers" ? "active" : "")" asp-page="/Customers/Index">
+        <a class="nav-link @(ViewData["ActiveMenu"]?.ToString() == "Customers" ? "active" : "")" asp-page="/Customers/Index">
             <i class="bi bi-people"></i> Customers
         </a>
         <a class="nav-link @(ViewData["ActiveMenu"]?.ToString() == "Agents" ? "active" : "")" asp-page="/Agents/Index">
             <i class="bi bi-person-badge"></i> Agents
-        </a> *@
+        </a>
         <a class="nav-link @(ViewData["ActiveMenu"]?.ToString() == "Users" ? "active" : "")" asp-page="/Users/Index">
             <i class="bi bi-person-gear"></i> Staff / Admin
         </a>

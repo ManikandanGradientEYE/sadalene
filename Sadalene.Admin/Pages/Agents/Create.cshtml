@@ -32,9 +32,59 @@
                 <label asp-for="Input.AgentCode" class="form-label fw-semibold">Agent Code</label>
                 <input asp-for="Input.AgentCode" class="form-control" placeholder="e.g. AGT-001" />
             </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Input.AddCustomer" class="form-check-input" type="checkbox" id="addCustomerToggle" />
+                <label asp-for="Input.AddCustomer" class="form-check-label fw-semibold">Add a customer for this agent</label>
+            </div>
+
+            <div id="customerFields" class="border rounded p-3 mb-4 bg-light-subtle" style="display:none">
+                <div class="mb-3">
+                    <label asp-for="Input.CustomerFullName" class="form-label fw-semibold">Customer Full Name</label>
+                    <input asp-for="Input.CustomerFullName" class="form-control" />
+                    <span asp-validation-for="Input.CustomerFullName" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Input.CustomerPhone" class="form-label fw-semibold">Customer Phone</label>
+                    <input asp-for="Input.CustomerPhone" class="form-control" />
+                    <span asp-validation-for="Input.CustomerPhone" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Input.CustomerEmail" class="form-label fw-semibold">Customer Email</label>
+                    <input asp-for="Input.CustomerEmail" type="email" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Input.CustomerAddress" class="form-label fw-semibold">Address</label>
+                    <textarea asp-for="Input.CustomerAddress" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.CustomerCity" class="form-label fw-semibold">City</label>
+                        <input asp-for="Input.CustomerCity" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.CustomerState" class="form-label fw-semibold">State</label>
+                        <input asp-for="Input.CustomerState" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.CustomerGstNumber" class="form-label fw-semibold">GST Number</label>
+                        <input asp-for="Input.CustomerGstNumber" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Create Agent</button>
         </form>
     </div>
 </div>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const addCustomerToggle = document.getElementById('addCustomerToggle');
+        const customerFields = document.getElementById('customerFields');
+        function syncCustomerFields() { customerFields.style.display = addCustomerToggle.checked ? 'block' : 'none'; }
+        addCustomerToggle.addEventListener('change', syncCustomerFields);
+        syncCustomerFields();
+    </script>
+}

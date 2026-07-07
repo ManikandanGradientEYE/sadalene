@@ -19,6 +19,10 @@ public class Customer : BaseEntity
     public string? GstNumber { get; set; }
     public DateTime? LastLoginAt { get; set; }
 
+    /// <summary>Agent who brought in this customer, if any. Optional — not every customer has an agent.</summary>
+    public int? AgentId { get; set; }
+    public Agent? Agent { get; set; }
+
     public ICollection<OtpLog> OtpLogs { get; set; } = [];
     public ICollection<Order> Orders { get; set; } = [];
     public ICollection<Invoice> Invoices { get; set; } = [];

@@ -18,4 +18,5 @@ public class Agent : BaseEntity
 
     public ICollection<OtpLog> OtpLogs { get; set; } = [];
     public ICollection<Order> Orders { get; set; } = [];
+    public ICollection<Customer> Customers { get; set; } = [];
 }

@@ -12,8 +12,9 @@
 
 <div class="card" style="max-width:500px">
     <div class="card-body">
-        <form method="post">
+        <form method="post" asp-page-handler="Save">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+            <input type="hidden" asp-for="Input.Id" />
             <div class="mb-3">
                 <label asp-for="Input.FullName" class="form-label fw-semibold">Full Name</label>
                 <input asp-for="Input.FullName" class="form-control" />
@@ -38,6 +39,78 @@
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Save</button>
         </form>
+    </div>
+</div>
+
+<div class="card mt-4" style="max-width:700px">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">Customers</h6>
+
+        @if (Model.Customers.Count == 0)
+        {
+            <p class="text-muted small mb-3">No customers linked to this agent yet.</p>
+        }
+        else
+        {
+            <table class="table table-sm table-hover mb-3">
+                <thead class="table-light"><tr><th>Name</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var c in Model.Customers)
+                    {
+                        <tr>
+                            <td>@c.FullName</td>
+                            <td>@c.Phone</td>
+                            <td><span class="badge @(c.IsActive ? "bg-success" : "bg-secondary")">@(c.IsActive ? "Active" : "Inactive")</span></td>
+                            <td><a asp-page="/Customers/Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">Update details</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#newCustomerForm">
+            <i class="bi bi-plus-lg me-1"></i>Add a customer
+        </button>
+
+        <div class="collapse mt-3" id="newCustomerForm">
+            <form method="post" asp-page-handler="AddCustomer">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+                <input type="hidden" asp-for="NewCustomer.AgentId" value="@Model.Input.Id" />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="NewCustomer.FullName" class="form-label fw-semibold">Full Name</label>
+                        <input asp-for="NewCustomer.FullName" class="form-control" />
+                        <span asp-validation-for="NewCustomer.FullName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewCustomer.Phone" class="form-label fw-semibold">Phone</label>
+                        <input asp-for="NewCustomer.Phone" class="form-control" />
+                        <span asp-validation-for="NewCustomer.Phone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewCustomer.Email" class="form-label fw-semibold">Email</label>
+                        <input asp-for="NewCustomer.Email" type="email" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewCustomer.GstNumber" class="form-label fw-semibold">GST Number</label>
+                        <input asp-for="NewCustomer.GstNumber" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="NewCustomer.Address" class="form-label fw-semibold">Address</label>
+                        <textarea asp-for="NewCustomer.Address" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewCustomer.City" class="form-label fw-semibold">City</label>
+                        <input asp-for="NewCustomer.City" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewCustomer.State" class="form-label fw-semibold">State</label>
+                        <input asp-for="NewCustomer.State" class="form-control" />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3"><i class="bi bi-check-lg me-2"></i>Add Customer</button>
+            </form>
+        </div>
     </div>
 </div>
 

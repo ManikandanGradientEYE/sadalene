@@ -21,6 +21,11 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 
         builder.HasIndex(x => x.Phone).IsUnique();
 
+        builder.HasOne(x => x.Agent)
+            .WithMany(a => a.Customers)
+            .HasForeignKey(x => x.AgentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasMany(x => x.OtpLogs)
             .WithOne(o => o.Customer)
             .HasForeignKey(o => o.CustomerId)
