@@ -61,10 +61,23 @@ public class EditModel : PageModel
             ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
             return await ReloadAsync(Input.Id);
         }
-        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Agents.AnyAsync(x => x.Email == Input.Email && x.Id != Input.Id))
+        if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone))
         {
-            ModelState.AddModelError(string.Empty, "An agent with this email already exists.");
+            ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
             return await ReloadAsync(Input.Id);
+        }
+        if (!string.IsNullOrWhiteSpace(Input.Email))
+        {
+            if (await _db.Agents.AnyAsync(x => x.Email == Input.Email && x.Id != Input.Id))
+            {
+                ModelState.AddModelError(string.Empty, "An agent with this email already exists.");
+                return await ReloadAsync(Input.Id);
+            }
+            if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email))
+            {
+                ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
+                return await ReloadAsync(Input.Id);
+            }
         }
 
         var a = await _db.Agents.FindAsync(Input.Id);

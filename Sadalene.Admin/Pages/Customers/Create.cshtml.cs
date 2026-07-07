@@ -35,10 +35,23 @@ public class CreateModel : PageModel
             ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
             return Page();
         }
-        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email))
+        if (await _db.Agents.AnyAsync(x => x.Phone == Input.Phone))
         {
-            ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
+            ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
             return Page();
+        }
+        if (!string.IsNullOrWhiteSpace(Input.Email))
+        {
+            if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email))
+            {
+                ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
+                return Page();
+            }
+            if (await _db.Agents.AnyAsync(x => x.Email == Input.Email))
+            {
+                ModelState.AddModelError(string.Empty, "An agent with this email already exists.");
+                return Page();
+            }
         }
 
         _db.Customers.Add(new Customer
