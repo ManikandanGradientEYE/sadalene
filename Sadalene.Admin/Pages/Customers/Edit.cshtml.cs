@@ -40,19 +40,24 @@ public class EditModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone && x.Id != Input.Id))
-        {
-            ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
-            return Page();
-        }
-        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email && x.Id != Input.Id))
-        {
-            ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
-            return Page();
-        }
-
         var c = await _db.Customers.FindAsync(Input.Id);
         if (c == null) return NotFound();
+
+        // Uniqueness only applies to walk-in customers (no agent) — matches the DB's filtered unique index.
+        if (c.AgentId == null)
+        {
+            if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone && x.Id != Input.Id))
+            {
+                ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
+                return Page();
+            }
+            if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email && x.Id != Input.Id))
+            {
+                ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
+                return Page();
+            }
+        }
+
         c.FullName = Input.FullName; c.Phone = Input.Phone; c.Email = Input.Email;
         c.Address  = Input.Address;  c.City  = Input.City;  c.State = Input.State;
         c.GstNumber = Input.GstNumber; c.IsActive = Input.IsActive; c.UpdatedAt = DateTime.UtcNow;
