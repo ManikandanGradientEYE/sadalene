@@ -12,40 +12,12 @@
     </button>
 </div>
 
-<div class="card">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr><th>Invoice #</th><th>Customer</th><th>Order #</th><th>Date</th><th>Amount</th><th>Status</th><th></th></tr>
-            </thead>
-            <tbody>
-                @foreach (var inv in Model.Invoices)
-                {
-                    <tr>
-                        <td class="fw-semibold font-monospace">@inv.InvoiceNumber</td>
-                        <td>@inv.Customer.FullName</td>
-                        <td class="text-muted small">@(inv.Order?.OrderNumber ?? "—")</td>
-                        <td class="text-muted small">@inv.InvoiceDate.ToString("dd MMM yyyy")</td>
-                        <td>@(inv.TotalAmount.HasValue ? $"₹{inv.TotalAmount:N2}" : "—")</td>
-                        <td><span class="badge @(inv.IsActive ? "bg-success" : "bg-secondary")">@(inv.IsActive ? "Active" : "Archived")</span></td>
-                        <td>
-                            <a href="@inv.FileUrl" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i> View
-                            </a>
-                            <form method="post" asp-page-handler="Archive" class="d-inline">
-                                <input type="hidden" name="id" value="@inv.Id" />
-                                <button class="btn btn-sm btn-outline-secondary ms-1"><i class="bi bi-archive"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-                @if (!Model.Invoices.Any())
-                {
-                    <tr><td colspan="7" class="text-center text-muted py-3">No invoices uploaded yet.</td></tr>
-                }
-            </tbody>
-        </table>
-    </div>
+<div class="mb-3" data-live-search data-target="#invoices-table-region">
+    <input data-search-input type="text" class="form-control" style="max-width:320px"
+           placeholder="Search by invoice # or customer..." value="@Model.Search" />
+</div>
+<div id="invoices-table-region">
+    <partial name="_InvoicesTable" model="Model" />
 </div>
 
 <!-- Upload Modal -->

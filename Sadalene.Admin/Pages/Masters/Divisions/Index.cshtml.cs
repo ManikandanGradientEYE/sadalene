@@ -1,23 +1,42 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Sadalene.Core.Common;
 using Sadalene.Core.Entities.Masters;
 using Sadalene.Infrastructure.Data;
+using Sadalene.Infrastructure.Extensions;
 
 namespace Sadalene.Admin.Pages.Masters.Divisions;
 
 public class IndexModel : PageModel
 {
+    private const int PageSize = 20;
+
     private readonly ApplicationDbContext _db;
     public IndexModel(ApplicationDbContext db) => _db = db;
 
-    public List<Division> Divisions { get; set; } = [];
+    public PagedResult<Division> Divisions { get; set; } = new();
+    public string? Search { get; set; }
 
-    public async Task OnGetAsync() =>
-        Divisions = await _db.Divisions
-            .Include(d => d.Categories)
-            .OrderBy(d => d.Name)
-            .ToListAsync();
+    public async Task<IActionResult> OnGetAsync(string? search, int pageNumber = 1)
+    {
+        Search = search;
+
+        var query = _db.Divisions.Include(d => d.Categories).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(d => d.Name.Contains(term));
+        }
+
+        Divisions = await query.OrderBy(d => d.Name).ToPagedResultAsync(pageNumber, PageSize);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Partial("_DivisionsTable", this);
+
+        return Page();
+    }
 
     public async Task<IActionResult> OnPostAddDivisionAsync(string name, string? description)
     {

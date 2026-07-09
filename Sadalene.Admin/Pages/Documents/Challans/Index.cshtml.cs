@@ -1,28 +1,51 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Sadalene.Core.Common;
 using Sadalene.Core.Entities.Auth;
 using Sadalene.Core.Entities.Documents;
 using Sadalene.Core.Entities.Orders;
 using Sadalene.Infrastructure.Data;
+using Sadalene.Infrastructure.Extensions;
 
 namespace Sadalene.Admin.Pages.Documents.Challans;
 
 public class IndexModel : PageModel
 {
+    private const int PageSize = 20;
+
     private readonly ApplicationDbContext _db;
     private readonly IWebHostEnvironment _env;
     public IndexModel(ApplicationDbContext db, IWebHostEnvironment env) { _db = db; _env = env; }
 
-    public List<Challan> Challans { get; set; } = [];
+    public PagedResult<Challan> Challans { get; set; } = new();
     public List<Customer> Customers { get; set; } = [];
     public List<Order> Orders { get; set; } = [];
+    public string? Search { get; set; }
 
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync(string? search, int pageNumber = 1)
     {
-        Challans  = await _db.Challans.Include(c => c.Customer).Include(c => c.Order).OrderByDescending(c => c.ChallanDate).ToListAsync();
+        Search = search;
+
+        var query = _db.Challans.Include(c => c.Customer).Include(c => c.Order).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(c =>
+                c.ChallanNumber.Contains(term) ||
+                c.Customer.FullName.Contains(term));
+        }
+
+        Challans = await query.OrderByDescending(c => c.ChallanDate).ToPagedResultAsync(pageNumber, PageSize);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Partial("_ChallansTable", this);
+
         Customers = await _db.Customers.Where(c => c.IsActive).OrderBy(c => c.FullName).ToListAsync();
         Orders    = await _db.Orders.Include(o => o.Customer).OrderByDescending(o => o.OrderDate).Take(100).ToListAsync();
+
+        return Page();
     }
 
     public async Task<IActionResult> OnPostUploadAsync(string challanNumber, int customerId, int? orderId,

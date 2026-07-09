@@ -25,69 +25,12 @@
 } *@
 
 <!-- Stock Levels -->
-<div class="card mb-4">
-    <div class="card-header fw-semibold py-2">
-        <i class="bi bi-table me-2"></i>Current Stock Levels
-        <span class="badge bg-secondary ms-2">@Model.Inventory.Count products</span>
-        @{
-            var outOfStock = Model.Inventory.Count(i => i.QuantityAvailable == 0);
-        }
-        @if (outOfStock > 0)
-        {
-            <span class="badge bg-danger ms-1">@outOfStock out of stock</span>
-        }
-    </div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>SKU</th>
-                    <th>Product</th>
-                    <th>Division</th>
-                    <th class="text-end">Qty Available</th>
-                    <th>UOM</th>
-                    <th>Last Updated</th>
-                    <th>Source</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var inv in Model.Inventory)
-                {
-                    var isZero = inv.QuantityAvailable == 0;
-                    <tr>
-                        <td class="text-muted small font-monospace">@inv.Product.ProductCode</td>
-                        <td class="fw-semibold">@inv.Product.Name</td>
-                        <td><span class="badge bg-secondary bg-opacity-75">@inv.Product.Division.Name</span></td>
-                        <td class="text-end @(isZero ? "text-danger fw-bold" : "fw-semibold")">
-                            @inv.QuantityAvailable.ToString("N2")
-                        </td>
-                        <td class="text-muted small">@(inv.Product.UomMaster?.Name ?? inv.UnitOfMeasure)</td>
-                        <td class="text-muted small">@inv.LastSyncedAt.ToString("dd MMM yy HH:mm")</td>
-                        <td>
-                            <span class="badge @(inv.SyncSource == "Manual" ? "bg-warning text-dark" : "bg-light text-dark border") small">
-                                @inv.SyncSource
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal" data-bs-target="#adjustModal"
-                                    data-product-id="@inv.ProductId"
-                                    data-product-name="@inv.Product.Name"
-                                    data-current-qty="@inv.QuantityAvailable.ToString("N2")"
-                                    data-uom="@(inv.Product.UomMaster?.Name ?? inv.UnitOfMeasure)">
-                                <i class="bi bi-sliders me-1"></i>Adjust
-                            </button>
-                        </td>
-                    </tr>
-                }
-                @if (!Model.Inventory.Any())
-                {
-                    <tr><td colspan="8" class="text-center text-muted py-4">No inventory records yet. Create products to initialise stock.</td></tr>
-                }
-            </tbody>
-        </table>
-    </div>
+<div class="mb-3" data-live-search data-target="#inventory-table-region">
+    <input data-search-input type="text" class="form-control" style="max-width:320px"
+           placeholder="Search by product name or SKU..." value="@Model.Search" />
+</div>
+<div id="inventory-table-region">
+    <partial name="_InventoryTable" model="Model" />
 </div>
 
 <!-- Adjustment Log -->
