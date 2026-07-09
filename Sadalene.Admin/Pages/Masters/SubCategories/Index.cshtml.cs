@@ -13,7 +13,8 @@ public class IndexModel : PageModel
     private const int PageSize = 20;
 
     private readonly ApplicationDbContext _db;
-    public IndexModel(ApplicationDbContext db) => _db = db;
+    private readonly IWebHostEnvironment _env;
+    public IndexModel(ApplicationDbContext db, IWebHostEnvironment env) { _db = db; _env = env; }
 
     public PagedResult<SubCategory> SubCategories { get; set; } = new();
     public List<Category> AllCategories { get; set; } = [];
@@ -59,7 +60,7 @@ public class IndexModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAddAsync(int categoryId, string name, int? uomMasterId, string? description, int displayOrder)
+    public async Task<IActionResult> OnPostAddAsync(int categoryId, string name, int? uomMasterId, string? description, int displayOrder, IFormFile? imageFile)
     {
         name = name.Trim();
 
@@ -75,14 +76,15 @@ public class IndexModel : PageModel
             Name         = name,
             UomMasterId  = uomMasterId == 0 ? null : uomMasterId,
             Description  = description,
-            DisplayOrder = displayOrder
+            DisplayOrder = displayOrder,
+            ImageUrl     = await SaveImageAsync(imageFile)
         });
         await _db.SaveChangesAsync();
         TempData["Success"] = $"Sub-Category '{name}' added.";
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostEditAsync(int id, int categoryId, string name, int? uomMasterId, string? description, int displayOrder)
+    public async Task<IActionResult> OnPostEditAsync(int id, int categoryId, string name, int? uomMasterId, string? description, int displayOrder, IFormFile? imageFile)
     {
         name = name.Trim();
 
@@ -100,11 +102,27 @@ public class IndexModel : PageModel
             s.UomMasterId = uomMasterId == 0 ? null : uomMasterId;
             s.Description = description;
             s.DisplayOrder = displayOrder;
-            s.UpdatedAt   = DateTime.UtcNow;
+
+            var imageUrl = await SaveImageAsync(imageFile);
+            if (imageUrl != null) s.ImageUrl = imageUrl;
+
+            s.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
         }
         TempData["Success"] = "Sub-Category updated.";
         return RedirectToPage();
+    }
+
+    private async Task<string?> SaveImageAsync(IFormFile? imageFile)
+    {
+        if (imageFile is not { Length: > 0 }) return null;
+
+        var folder = Path.Combine(_env.WebRootPath, "uploads", "subcategories");
+        Directory.CreateDirectory(folder);
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(imageFile.FileName)}";
+        using var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create);
+        await imageFile.CopyToAsync(stream);
+        return $"/uploads/subcategories/{fileName}";
     }
 
     public async Task<IActionResult> OnPostToggleAsync(int id)

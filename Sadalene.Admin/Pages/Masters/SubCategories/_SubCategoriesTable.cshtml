@@ -5,7 +5,7 @@
         <table class="table table-hover mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Division</th><th>Category</th><th>Sub-Category</th>
+                    <th>Image</th><th>Division</th><th>Category</th><th>Sub-Category</th>
                     <th>UOM</th><th>Description</th><th>Order</th><th>Status</th><th></th>
                 </tr>
             </thead>
@@ -13,6 +13,19 @@
                 @foreach (var s in Model.SubCategories.Items)
                 {
                     <tr>
+                        <td>
+                            @if (!string.IsNullOrEmpty(s.ImageUrl))
+                            {
+                                <img src="@s.ImageUrl" alt="@s.Name" class="rounded border" style="width:40px;height:40px;object-fit:cover" />
+                            }
+                            else
+                            {
+                                <span class="d-inline-flex align-items-center justify-content-center rounded border bg-light text-muted"
+                                      style="width:40px;height:40px">
+                                    <i class="bi bi-image"></i>
+                                </span>
+                            }
+                        </td>
                         <td class="text-muted small">
                             <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
                                 @s.Category.Division?.Name
@@ -54,7 +67,7 @@
                                 <h5 class="modal-title">Edit Sub-Category</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                            <form method="post" asp-page-handler="Edit">
+                            <form method="post" asp-page-handler="Edit" enctype="multipart/form-data">
                                 <div class="modal-body">
                                     <input type="hidden" name="Id" value="@s.Id" />
                                     <div class="mb-3">
@@ -90,6 +103,17 @@
                                         <input name="Description" value="@s.Description" class="form-control" />
                                     </div>
                                     <div class="mb-3">
+                                        <label class="form-label fw-semibold">Image</label>
+                                        @if (!string.IsNullOrEmpty(s.ImageUrl))
+                                        {
+                                            <div class="mb-2">
+                                                <img src="@s.ImageUrl" alt="@s.Name" class="rounded border" style="width:64px;height:64px;object-fit:cover" />
+                                            </div>
+                                        }
+                                        <input name="imageFile" type="file" class="form-control" accept="image/*" />
+                                        <div class="form-text">Leave blank to keep the current image.</div>
+                                    </div>
+                                    <div class="mb-3">
                                         <label class="form-label fw-semibold">Display Order</label>
                                         <input name="DisplayOrder" value="@s.DisplayOrder" type="number" class="form-control" />
                                     </div>
@@ -104,7 +128,7 @@
                 }
                 @if (Model.SubCategories.Items.Count == 0)
                 {
-                    <tr><td colspan="8" class="text-center text-muted py-4">No sub-categories found.</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">No sub-categories found.</td></tr>
                 }
             </tbody>
         </table>
