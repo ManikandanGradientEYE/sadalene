@@ -19,6 +19,8 @@ public class CreateModel : PageModel
     public InputModel Input { get; set; } = new();
 
     public SelectList Divisions { get; set; } = null!;
+    public SelectList Categories { get; set; } = new SelectList(Enumerable.Empty<SelectListItem>());
+    public SelectList SubCategories { get; set; } = new SelectList(Enumerable.Empty<SelectListItem>());
     public SelectList ProductTypes { get; set; } = null!;
     public SelectList PackingTypes { get; set; } = null!;
     public SelectList UomList { get; set; } = null!;
@@ -61,6 +63,21 @@ public class CreateModel : PageModel
 
     public async Task OnGetAsync()
     {
+        // Classification is usually the same across a run of products entered back-to-back,
+        // so default it to the last-created product's values instead of making staff re-pick it every time.
+        var last = await _db.Products
+            .OrderByDescending(p => p.Id)
+            .Select(p => new { p.DivisionId, p.CategoryId, p.SubCategoryId, p.ProductTypeId })
+            .FirstOrDefaultAsync();
+
+        if (last != null)
+        {
+            Input.DivisionId    = last.DivisionId;
+            Input.CategoryId    = last.CategoryId;
+            Input.SubCategoryId = last.SubCategoryId;
+            Input.ProductTypeId = last.ProductTypeId;
+        }
+
         await LoadDropdownsAsync();
     }
 
@@ -171,5 +188,21 @@ public class CreateModel : PageModel
             .Select(u => new { u.Id, Label = u.Abbreviation != null ? $"{u.Name} ({u.Abbreviation})" : u.Name })
             .ToListAsync();
         UomList = new SelectList(uoms, "Id", "Label");
+
+        // Pre-populate the cascading Category/Sub-Category dropdowns to match whatever Division/Category
+        // is already selected (from the last-record default above, or from a postback that failed validation).
+        if (Input.DivisionId > 0)
+        {
+            Categories = new SelectList(
+                await _db.Categories.Where(c => c.IsActive && c.DivisionId == Input.DivisionId).OrderBy(c => c.Name).ToListAsync(),
+                "Id", "Name");
+        }
+
+        if (Input.CategoryId > 0)
+        {
+            SubCategories = new SelectList(
+                await _db.SubCategories.Where(s => s.IsActive && s.CategoryId == Input.CategoryId).OrderBy(s => s.Name).ToListAsync(),
+                "Id", "Name");
+        }
     }
 }

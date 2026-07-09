@@ -27,15 +27,15 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                    <select asp-for="Input.CategoryId" id="categorySelect" class="form-select">
-                        <option value="">— Select Division first —</option>
+                    <select asp-for="Input.CategoryId" id="categorySelect" class="form-select" asp-items="Model.Categories">
+                        <option value="">@(Model.Input.DivisionId > 0 ? "— Select Category —" : "— Select Division first —")</option>
                     </select>
                     <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-semibold">Sub-Category <span class="text-danger">*</span></label>
-                    <select asp-for="Input.SubCategoryId" id="subCategorySelect" class="form-select">
-                        <option value="">— Select Category first —</option>
+                    <select asp-for="Input.SubCategoryId" id="subCategorySelect" class="form-select" asp-items="Model.SubCategories">
+                        <option value="">@(Model.Input.CategoryId > 0 ? "— Select Sub-Category —" : "— Select Category first —")</option>
                     </select>
                     <span asp-validation-for="Input.SubCategoryId" class="text-danger small"></span>
                 </div>
