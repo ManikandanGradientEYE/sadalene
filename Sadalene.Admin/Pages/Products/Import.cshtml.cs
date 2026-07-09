@@ -22,7 +22,7 @@ public class ImportModel : PageModel
     private static readonly string[] RequiredHeaders = ["Division", "Category", "SubCategory", "ProductType", "Name"];
     private static readonly (string Header, bool Required)[] TemplateColumns =
     [
-        ("Division", true), ("Category", true), ("SubCategory", true), ("ProductType", true), ("Name", true),
+        ("Division", true), ("DivisionCode", false), ("Category", true), ("SubCategory", true), ("ProductType", true), ("Name", true),
         ("ProductCode", false), ("MarketName", false), ("Description", false),
         ("UOM", false), ("PackingType", false),
         ("Rate", false), ("RatePer", false), ("Cut", false), ("QtyPerUnit", false), ("Grade", false),
@@ -56,7 +56,8 @@ public class ImportModel : PageModel
             refWs.Cell(1, i + 1).Style.Font.Bold = true;
         }
 
-        var divisions = await _db.Divisions.Where(d => d.IsActive).OrderBy(d => d.Name).Select(d => d.Name).ToListAsync();
+        var divisions = await _db.Divisions.Where(d => d.IsActive).OrderBy(d => d.Name)
+            .Select(d => d.Code != null ? $"{d.Name} ({d.Code})" : d.Name).ToListAsync();
         var categories = await _db.Categories.Where(c => c.IsActive).Include(c => c.Division)
             .OrderBy(c => c.Division.Name).ThenBy(c => c.Name)
             .Select(c => c.Division.Name + " / " + c.Name).ToListAsync();
@@ -131,6 +132,7 @@ public class ImportModel : PageModel
         var packingTypeCache = new Dictionary<string, PackingType>(StringComparer.OrdinalIgnoreCase);
         var uomCache = new Dictionary<string, UomMaster>(StringComparer.OrdinalIgnoreCase);
         var codesInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var divisionCodesInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pending = new List<(Product Product, decimal InitialStock)>();
 
         var lastRow = ws.LastRowUsed()?.RowNumber() ?? 1;
@@ -151,7 +153,16 @@ public class ImportModel : PageModel
             if (string.IsNullOrWhiteSpace(productTypeName)) { Errors.Add($"Row {row}: ProductType is required."); continue; }
             if (string.IsNullOrWhiteSpace(name)) { Errors.Add($"Row {row}: Name is required."); continue; }
 
-            var division = await GetOrCreateDivisionAsync(divisionName, divisionCache);
+            var divisionCode = NullIfEmpty(Cell(row, "DivisionCode"))?.ToUpperInvariant();
+            if (divisionCode != null && divisionCode.Length > 20)
+            {
+                Errors.Add($"Row {row}: Division code '{divisionCode}' must be 20 characters or fewer.");
+                continue;
+            }
+
+            var (division, divisionError) = await GetOrCreateDivisionAsync(divisionName, divisionCode, divisionCache, divisionCodesInFile);
+            if (division == null) { Errors.Add($"Row {row}: {divisionError}"); continue; }
+
             var category = await GetOrCreateCategoryAsync(division, divisionName, categoryName, categoryCache);
             var subCategory = await GetOrCreateSubCategoryAsync(category, $"{divisionName}||{categoryName}", subCategoryName, subCategoryCache);
             var productType = await GetOrCreateProductTypeAsync(productTypeName, productTypeCache);
@@ -264,14 +275,27 @@ public class ImportModel : PageModel
         return Page();
     }
 
-    private async Task<Division> GetOrCreateDivisionAsync(string name, Dictionary<string, Division> cache)
+    private async Task<(Division? Division, string? Error)> GetOrCreateDivisionAsync(
+        string name, string? code, Dictionary<string, Division> cache, HashSet<string> codesInFile)
     {
-        if (cache.TryGetValue(name, out var cached)) return cached;
+        if (cache.TryGetValue(name, out var cached)) return (cached, null);
+
         var existing = await _db.Divisions.FirstOrDefaultAsync(x => x.Name == name);
-        var division = existing ?? new Division { Name = name };
-        if (existing == null) _db.Divisions.Add(division);
+        if (existing != null)
+        {
+            // Division already exists — keep its current code as-is; DivisionCode in the file only applies to new divisions.
+            cache[name] = existing;
+            return (existing, null);
+        }
+
+        // New division: DivisionCode (if given) must be unique against both the DB and other new divisions in this file.
+        if (code != null && (!codesInFile.Add(code) || await _db.Divisions.AnyAsync(d => d.Code == code)))
+            return (null, $"Division code '{code}' is already in use by another division.");
+
+        var division = new Division { Name = name, Code = code };
+        _db.Divisions.Add(division);
         cache[name] = division;
-        return division;
+        return (division, null);
     }
 
     private async Task<Category> GetOrCreateCategoryAsync(Division division, string divisionKey, string name, Dictionary<string, Category> cache)

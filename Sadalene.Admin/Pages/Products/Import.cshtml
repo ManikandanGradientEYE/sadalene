@@ -18,6 +18,11 @@
             Product Type, Packing Type and UOM are matched by name — if a name doesn't already exist it will
             be created automatically, so you don't need to set those up first.
         </p>
+        <p class="text-muted small mb-3">
+            <i class="bi bi-info-circle me-1"></i><strong>DivisionCode</strong> is optional and only applies when a new Division is
+            being created by the import (existing Divisions keep their current code). It's used as the prefix for
+            auto-generated SKUs, e.g. <code>PNN00034</code>.
+        </p>
         <a asp-page-handler="Template" class="btn btn-outline-secondary btn-sm mb-4">
             <i class="bi bi-download me-1"></i>Download Excel Template
         </a>
