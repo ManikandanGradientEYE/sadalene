@@ -50,8 +50,8 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Barcode Value</label>
                         <input name="barcodeValue" class="form-control font-monospace"
-                               value="@(Model.Product.BarcodeValue ?? $"SDL-{Model.Product.Id:D6}")"
-                               placeholder="e.g. SDL-000001" required />
+                               value="@(Model.Product.BarcodeValue ?? Model.Product.ProductCode ?? $"SD{Model.Product.Id:D5}")"
+                               placeholder="e.g. PNN00034" required />
                         <div class="form-text">Leave as-is for auto-generated value, or enter a custom one.</div>
                     </div>
                     @if (Model.Product.IsBarcodeActive)
