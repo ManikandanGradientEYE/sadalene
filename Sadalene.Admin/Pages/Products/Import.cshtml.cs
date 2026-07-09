@@ -227,7 +227,11 @@ public class ImportModel : PageModel
         foreach (var (product, initialStock) in pending)
         {
             if (string.IsNullOrEmpty(product.ProductCode))
-                product.ProductCode = $"SD{product.Id:D5}";
+            {
+                var divisionCode = product.Division.Code;
+                var prefix = string.IsNullOrWhiteSpace(divisionCode) ? "SD" : divisionCode.Trim().ToUpperInvariant();
+                product.ProductCode = $"{prefix}{product.Id:D5}";
+            }
 
             _db.InventoryRecords.Add(new InventoryRecord
             {

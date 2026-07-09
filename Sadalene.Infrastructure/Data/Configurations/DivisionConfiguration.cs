@@ -12,9 +12,11 @@ public class DivisionConfiguration : IEntityTypeConfiguration<Division>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Code).HasMaxLength(20);
         builder.Property(x => x.Description).HasMaxLength(300);
 
         builder.HasIndex(x => x.Name).IsUnique();
+        builder.HasIndex(x => x.Code).IsUnique().HasFilter("[Code] IS NOT NULL");
 
         builder.HasMany(x => x.Categories)
             .WithOne(c => c.Division)

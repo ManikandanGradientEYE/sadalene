@@ -58,7 +58,7 @@
                 <div class="col-md-3">
                     <label class="form-label fw-semibold">SKU / Product Code</label>
                     <input asp-for="Input.ProductCode" class="form-control" placeholder="Leave blank to auto-generate" />
-                    <div class="form-text"><i class="bi bi-magic me-1"></i>Auto-generated as <strong>SD00001</strong> format if left blank.</div>
+                    <div class="form-text"><i class="bi bi-magic me-1"></i>Auto-generated using the Division's code as prefix (e.g. <strong>SLK00001</strong>) if left blank. Falls back to <strong>SD00001</strong> when the Division has no code set.</div>
                     <span asp-validation-for="Input.ProductCode" class="text-danger small"></span>
                 </div>
                 <div class="col-md-4">

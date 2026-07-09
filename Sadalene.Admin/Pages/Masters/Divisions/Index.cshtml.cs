@@ -27,7 +27,9 @@ public class IndexModel : PageModel
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            query = query.Where(d => d.Name.Contains(term));
+            query = query.Where(d =>
+                d.Name.Contains(term) ||
+                (d.Code != null && d.Code.Contains(term)));
         }
 
         Divisions = await query.OrderBy(d => d.Name).ToPagedResultAsync(pageNumber, PageSize);
@@ -38,29 +40,41 @@ public class IndexModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAddDivisionAsync(string name, string? description)
+    public async Task<IActionResult> OnPostAddDivisionAsync(string name, string? code, string? description)
     {
         name = name.Trim();
+        code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
 
         if (await _db.Divisions.AnyAsync(d => d.Name == name))
         {
             TempData["Error"] = $"A division named '{name}' already exists.";
             return RedirectToPage();
         }
+        if (code != null && await _db.Divisions.AnyAsync(d => d.Code == code))
+        {
+            TempData["Error"] = $"A division with code '{code}' already exists.";
+            return RedirectToPage();
+        }
 
-        _db.Divisions.Add(new Division { Name = name, Description = description ?? string.Empty });
+        _db.Divisions.Add(new Division { Name = name, Code = code, Description = description ?? string.Empty });
         await _db.SaveChangesAsync();
         TempData["Success"] = $"Division '{name}' created.";
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostEditDivisionAsync(int id, string name, string? description)
+    public async Task<IActionResult> OnPostEditDivisionAsync(int id, string name, string? code, string? description)
     {
         name = name.Trim();
+        code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
 
         if (await _db.Divisions.AnyAsync(d => d.Name == name && d.Id != id))
         {
             TempData["Error"] = $"A division named '{name}' already exists.";
+            return RedirectToPage();
+        }
+        if (code != null && await _db.Divisions.AnyAsync(d => d.Code == code && d.Id != id))
+        {
+            TempData["Error"] = $"A division with code '{code}' already exists.";
             return RedirectToPage();
         }
 
@@ -68,6 +82,7 @@ public class IndexModel : PageModel
         if (division != null)
         {
             division.Name        = name;
+            division.Code        = code;
             division.Description = description ?? string.Empty;
             division.UpdatedAt   = DateTime.UtcNow;
             await _db.SaveChangesAsync();

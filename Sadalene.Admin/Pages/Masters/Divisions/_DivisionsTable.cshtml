@@ -4,13 +4,23 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead class="table-light">
-                <tr><th>Division</th><th>Description</th><th>Categories</th><th>Status</th><th></th></tr>
+                <tr><th>Division</th><th>Code</th><th>Description</th><th>Categories</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var d in Model.Divisions.Items)
                 {
                     <tr>
                         <td class="fw-semibold">@d.Name</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(d.Code))
+                            {
+                                <span class="badge bg-secondary bg-opacity-75">@d.Code</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
                         <td class="text-muted small">@d.Description</td>
                         <td>
                             <div class="d-flex flex-wrap gap-1">
@@ -57,6 +67,10 @@
                                         <input name="Name" value="@d.Name" class="form-control" required />
                                     </div>
                                     <div class="mb-3">
+                                        <label class="form-label fw-semibold">Division Code</label>
+                                        <input name="Code" value="@d.Code" class="form-control" placeholder="e.g. SLK" maxlength="20" />
+                                    </div>
+                                    <div class="mb-3">
                                         <label class="form-label fw-semibold">Description</label>
                                         <input name="Description" value="@d.Description" class="form-control" />
                                     </div>
@@ -71,7 +85,7 @@
                 }
                 @if (Model.Divisions.Items.Count == 0)
                 {
-                    <tr><td colspan="5" class="text-center text-muted py-4">No divisions found.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">No divisions found.</td></tr>
                 }
             </tbody>
         </table>

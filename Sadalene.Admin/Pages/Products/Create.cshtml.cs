@@ -135,10 +135,16 @@ public class CreateModel : PageModel
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
-        // Auto-generate SKU from assigned PK if staff left it blank
+        // Auto-generate SKU from assigned PK if staff left it blank, prefixed with the Division's code
         if (string.IsNullOrEmpty(product.ProductCode))
         {
-            product.ProductCode = $"SD{product.Id:D5}";
+            var divisionCode = await _db.Divisions
+                .Where(d => d.Id == product.DivisionId)
+                .Select(d => d.Code)
+                .FirstOrDefaultAsync();
+
+            var prefix = string.IsNullOrWhiteSpace(divisionCode) ? "SD" : divisionCode.Trim().ToUpperInvariant();
+            product.ProductCode = $"{prefix}{product.Id:D5}";
         }
 
         // Bootstrap inventory record with optional initial stock
