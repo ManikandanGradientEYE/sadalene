@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Sadalene.Core.Entities.Auth;
@@ -15,6 +16,8 @@ public class CreateModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
+    public SelectList Agents { get; set; } = null!;
+
     public class InputModel
     {
         [Required] public string FullName { get; set; } = string.Empty;
@@ -24,13 +27,23 @@ public class CreateModel : PageModel
         public string? City { get; set; }
         public string? State { get; set; }
         public string? GstNumber { get; set; }
+        public int? AgentId { get; set; }
+    }
+
+    public async Task OnGetAsync()
+    {
+        await LoadAgentsAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        await LoadAgentsAsync();
+
         if (!ModelState.IsValid) return Page();
 
-        if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone))
+        var agentId = Input.AgentId is null or 0 ? null : Input.AgentId;
+
+        if (await _db.Customers.AnyAsync(x => x.AgentId == agentId && x.Phone == Input.Phone))
         {
             ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
             return Page();
@@ -42,7 +55,7 @@ public class CreateModel : PageModel
         }
         if (!string.IsNullOrWhiteSpace(Input.Email))
         {
-            if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email))
+            if (await _db.Customers.AnyAsync(x => x.AgentId == agentId && x.Email == Input.Email))
             {
                 ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
                 return Page();
@@ -58,10 +71,16 @@ public class CreateModel : PageModel
         {
             FullName  = Input.FullName, Phone = Input.Phone, Email = Input.Email,
             Address   = Input.Address,  City  = Input.City,  State = Input.State,
-            GstNumber = Input.GstNumber
+            GstNumber = Input.GstNumber,
+            AgentId   = agentId
         });
         await _db.SaveChangesAsync();
         TempData["Success"] = "Customer created successfully.";
         return RedirectToPage("Index");
+    }
+
+    private async Task LoadAgentsAsync()
+    {
+        Agents = new SelectList(await _db.Agents.Where(a => a.IsActive).OrderBy(a => a.FullName).ToListAsync(), "Id", "FullName");
     }
 }
