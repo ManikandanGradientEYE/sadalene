@@ -40,6 +40,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAddAsync(string name, string? description)
     {
+        name = name.Trim();
+
+        if (await _db.ProductTypes.AnyAsync(t => t.Name == name))
+        {
+            TempData["Error"] = $"A product type named '{name}' already exists.";
+            return RedirectToPage();
+        }
+
         _db.ProductTypes.Add(new ProductType { Name = name, Description = description });
         await _db.SaveChangesAsync();
         TempData["Success"] = "Product type added.";
@@ -48,6 +56,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostEditAsync(int id, string name, string? description)
     {
+        name = name.Trim();
+
+        if (await _db.ProductTypes.AnyAsync(t => t.Name == name && t.Id != id))
+        {
+            TempData["Error"] = $"A product type named '{name}' already exists.";
+            return RedirectToPage();
+        }
+
         var t = await _db.ProductTypes.FindAsync(id);
         if (t != null) { t.Name = name; t.Description = description; t.UpdatedAt = DateTime.UtcNow; await _db.SaveChangesAsync(); }
         TempData["Success"] = "Product type updated.";

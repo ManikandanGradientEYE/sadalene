@@ -61,6 +61,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAddAsync(int categoryId, string name, int? uomMasterId, string? description, int displayOrder)
     {
+        name = name.Trim();
+
+        if (await _db.SubCategories.AnyAsync(s => s.CategoryId == categoryId && s.Name == name))
+        {
+            TempData["Error"] = $"A sub-category named '{name}' already exists in this category.";
+            return RedirectToPage();
+        }
+
         _db.SubCategories.Add(new SubCategory
         {
             CategoryId   = categoryId,
@@ -76,6 +84,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostEditAsync(int id, int categoryId, string name, int? uomMasterId, string? description, int displayOrder)
     {
+        name = name.Trim();
+
+        if (await _db.SubCategories.AnyAsync(s => s.CategoryId == categoryId && s.Name == name && s.Id != id))
+        {
+            TempData["Error"] = $"A sub-category named '{name}' already exists in this category.";
+            return RedirectToPage();
+        }
+
         var s = await _db.SubCategories.FindAsync(id);
         if (s != null)
         {

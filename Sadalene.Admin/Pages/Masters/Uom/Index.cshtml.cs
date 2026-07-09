@@ -42,6 +42,8 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAddAsync(string name, string? abbreviation, string? description)
     {
+        name = name.Trim();
+
         if (await _db.UomMasters.AnyAsync(u => u.Name == name))
         {
             TempData["Error"] = $"UOM '{name}' already exists.";
@@ -55,6 +57,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostEditAsync(int id, string name, string? abbreviation, string? description)
     {
+        name = name.Trim();
+
+        if (await _db.UomMasters.AnyAsync(u => u.Name == name && u.Id != id))
+        {
+            TempData["Error"] = $"UOM '{name}' already exists.";
+            return RedirectToPage();
+        }
+
         var u = await _db.UomMasters.FindAsync(id);
         if (u != null)
         {

@@ -54,6 +54,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAddAsync(int divisionId, string name, string? description, int displayOrder)
     {
+        name = name.Trim();
+
+        if (await _db.Categories.AnyAsync(c => c.DivisionId == divisionId && c.Name == name))
+        {
+            TempData["Error"] = $"A category named '{name}' already exists in this division.";
+            return RedirectToPage();
+        }
+
         _db.Categories.Add(new Category
         {
             DivisionId   = divisionId,
@@ -68,6 +76,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostEditAsync(int id, int divisionId, string name, string? description, int displayOrder)
     {
+        name = name.Trim();
+
+        if (await _db.Categories.AnyAsync(c => c.DivisionId == divisionId && c.Name == name && c.Id != id))
+        {
+            TempData["Error"] = $"A category named '{name}' already exists in this division.";
+            return RedirectToPage();
+        }
+
         var c = await _db.Categories.FindAsync(id);
         if (c != null)
         {

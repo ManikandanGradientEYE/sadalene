@@ -40,6 +40,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAddDivisionAsync(string name, string? description)
     {
+        name = name.Trim();
+
+        if (await _db.Divisions.AnyAsync(d => d.Name == name))
+        {
+            TempData["Error"] = $"A division named '{name}' already exists.";
+            return RedirectToPage();
+        }
+
         _db.Divisions.Add(new Division { Name = name, Description = description ?? string.Empty });
         await _db.SaveChangesAsync();
         TempData["Success"] = $"Division '{name}' created.";
@@ -48,6 +56,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostEditDivisionAsync(int id, string name, string? description)
     {
+        name = name.Trim();
+
+        if (await _db.Divisions.AnyAsync(d => d.Name == name && d.Id != id))
+        {
+            TempData["Error"] = $"A division named '{name}' already exists.";
+            return RedirectToPage();
+        }
+
         var division = await _db.Divisions.FindAsync(id);
         if (division != null)
         {

@@ -43,6 +43,17 @@ public class EditModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
+        if (await _db.Users.AnyAsync(u => u.Phone == Input.Phone && u.Id != Input.Id))
+        {
+            ModelState.AddModelError(string.Empty, "A user with this phone number already exists.");
+            return Page();
+        }
+        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Users.AnyAsync(u => u.Email == Input.Email && u.Id != Input.Id))
+        {
+            ModelState.AddModelError(string.Empty, "A user with this email already exists.");
+            return Page();
+        }
+
         var user = await _db.Users.FindAsync(Input.Id);
         if (user == null) return NotFound();
 

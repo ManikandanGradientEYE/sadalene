@@ -40,6 +40,8 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAddAsync(string name, string? description)
     {
+        name = name.Trim();
+
         if (await _db.PackingTypes.AnyAsync(p => p.Name == name))
         {
             TempData["Error"] = $"Packing type '{name}' already exists.";
@@ -53,6 +55,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostEditAsync(int id, string name, string? description)
     {
+        name = name.Trim();
+
+        if (await _db.PackingTypes.AnyAsync(p => p.Name == name && p.Id != id))
+        {
+            TempData["Error"] = $"Packing type '{name}' already exists.";
+            return RedirectToPage();
+        }
+
         var p = await _db.PackingTypes.FindAsync(id);
         if (p != null) { p.Name = name; p.Description = description; p.UpdatedAt = DateTime.UtcNow; await _db.SaveChangesAsync(); }
         TempData["Success"] = "Packing type updated.";

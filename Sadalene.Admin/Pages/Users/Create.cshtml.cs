@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using Sadalene.Core.Entities.Auth;
 using Sadalene.Core.Enums;
 using Sadalene.Infrastructure.Data;
@@ -27,6 +28,17 @@ public class CreateModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();
+
+        if (await _db.Users.AnyAsync(u => u.Phone == Input.Phone))
+        {
+            ModelState.AddModelError(string.Empty, "A user with this phone number already exists.");
+            return Page();
+        }
+        if (!string.IsNullOrWhiteSpace(Input.Email) && await _db.Users.AnyAsync(u => u.Email == Input.Email))
+        {
+            ModelState.AddModelError(string.Empty, "A user with this email already exists.");
+            return Page();
+        }
 
         _db.Users.Add(new User
         {
