@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Sadalene.Admin.Services;
 using Sadalene.Core.Entities.Products;
 using Sadalene.Infrastructure.Data;
 
@@ -10,12 +9,7 @@ namespace Sadalene.Admin.Pages.Products;
 public class BarcodeModel : PageModel
 {
     private readonly ApplicationDbContext _db;
-    private readonly BarcodeService _barcodeService;
-    public BarcodeModel(ApplicationDbContext db, BarcodeService barcodeService)
-    {
-        _db = db;
-        _barcodeService = barcodeService;
-    }
+    public BarcodeModel(ApplicationDbContext db) => _db = db;
 
     public Product? Product { get; set; }
 
@@ -29,47 +23,5 @@ public class BarcodeModel : PageModel
 
         if (Product == null) return NotFound();
         return Page();
-    }
-
-    public async Task<IActionResult> OnPostGenerateAsync(int id, string barcodeValue)
-    {
-        var product = await _db.Products.FindAsync(id);
-        if (product == null) return NotFound();
-
-        product.BarcodeValue      = barcodeValue;
-        product.IsBarcodeActive   = true;
-        product.BarcodeGeneratedAt = DateTime.UtcNow;
-        product.UpdatedAt         = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-        TempData["Success"] = "Barcode generated successfully.";
-        return RedirectToPage(new { id });
-    }
-
-    public async Task<IActionResult> OnGetImageAsync(int id, bool download = false)
-    {
-        var product = await _db.Products.FindAsync(id);
-        if (product == null || !product.IsBarcodeActive || string.IsNullOrEmpty(product.BarcodeValue))
-            return NotFound();
-
-        var pngBytes = _barcodeService.GenerateQrCode(product.BarcodeValue);
-
-        if (download)
-            return File(pngBytes, "image/png", $"barcode-{product.ProductCode ?? product.Id.ToString()}.png");
-
-        return File(pngBytes, "image/png");
-    }
-
-    public async Task<IActionResult> OnPostDeactivateAsync(int id)
-    {
-        var product = await _db.Products.FindAsync(id);
-        if (product == null) return NotFound();
-
-        product.IsBarcodeActive = false;
-        product.UpdatedAt       = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-
-        TempData["Success"] = "Barcode deactivated.";
-        return RedirectToPage(new { id });
     }
 }
