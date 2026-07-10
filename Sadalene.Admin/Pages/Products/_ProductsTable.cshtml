@@ -21,7 +21,10 @@
                         <td><span class="badge @(p.IsActive ? "bg-success" : "bg-secondary")">@(p.IsActive ? "Active" : "Inactive")</span></td>
                         <td>
                             <a asp-page="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                            <a asp-page="Barcode" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary ms-1" title="Barcode"><i class="bi bi-upc-scan"></i></a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-1" title="Print QR Code"
+                                    data-bs-toggle="modal" data-bs-target="#printQrModal" data-sku="@(p.ProductCode ?? $"SD{p.Id:D5}")">
+                                <i class="bi bi-qr-code"></i>
+                            </button>
                         </td>
                     </tr>
                 }

@@ -1,0 +1,45 @@
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('printQrModal');
+        if (!modal) return;
+
+        modal.addEventListener('show.bs.modal', function (e) {
+            const sku = e.relatedTarget.dataset.sku;
+            modal.dataset.currentSku = sku;
+            document.getElementById('printQrSku').textContent = sku;
+            QRCode.toCanvas(document.getElementById('printQrPreview'), sku, { width: 140, margin: 1 });
+        });
+
+        document.getElementById('confirmPrintQrBtn').addEventListener('click', async function () {
+            const sku = modal.dataset.currentSku;
+            const qty = Math.max(1, Math.min(500, parseInt(document.getElementById('printQrQty').value, 10) || 1));
+
+            const dataUrl = await QRCode.toDataURL(sku, { margin: 0, width: 300 });
+            const labelsHtml = Array.from({ length: qty }, () => `<div class="label"><img src="${dataUrl}" /></div>`).join('');
+
+            const win = window.open('', '_blank', 'width=400,height=400');
+            if (!win) { alert('Please allow pop-ups to print QR labels.'); return; }
+
+            win.document.write(`<!DOCTYPE html>
+<html><head><title>Print QR — ${sku}</title>
+<style>
+    @@page { size: 1cm 1cm; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .label {
+        width: 1cm; height: 1cm;
+        display: flex; align-items: center; justify-content: center;
+        page-break-after: always;
+        overflow: hidden;
+    }
+    .label img { width: 100%; height: 100%; }
+</style>
+</head><body>${labelsHtml}</body></html>`);
+            win.document.close();
+
+            win.onload = function () { setTimeout(function () { win.print(); }, 150); };
+            win.onafterprint = function () { win.close(); };
+        });
+    });
+</script>

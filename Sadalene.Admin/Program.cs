@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using Sadalene.Admin.Services;
 using Sadalene.Core.Entities.Auth;
 using Sadalene.Core.Enums;
 using Sadalene.Infrastructure.Data;
@@ -28,8 +27,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
         options.Cookie.Name      = "Sadalene.Admin";
     });
-
-builder.Services.AddScoped<BarcodeService>();
 
 var app = builder.Build();
 

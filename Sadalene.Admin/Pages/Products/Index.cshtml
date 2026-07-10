@@ -20,3 +20,10 @@
 <div id="products-table-region">
     <partial name="_ProductsTable" model="Model" />
 </div>
+
+<!-- Kept outside the AJAX-swapped table region so it survives search/pagination -->
+<partial name="_PrintQrModal" />
+
+@section Scripts {
+<partial name="_PrintQrScripts" />
+}
