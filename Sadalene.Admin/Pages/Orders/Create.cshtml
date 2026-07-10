@@ -1,0 +1,199 @@
+@page
+@model Sadalene.Admin.Pages.Orders.CreateModel
+@{
+    ViewData["Title"] = "Add Order";
+    ViewData["ActiveMenu"] = "Orders";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Add Order</h5>
+</div>
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+    <!-- Order For -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-person me-2"></i>Order For</div>
+        <div class="card-body">
+            <div class="btn-group mb-3" role="group">
+                <input type="radio" class="btn-check" name="orderSourceToggle" id="sourceWalkin" checked>
+                <label class="btn btn-outline-primary btn-sm" for="sourceWalkin">Walk-in Customer</label>
+                <input type="radio" class="btn-check" name="orderSourceToggle" id="sourceAgent">
+                <label class="btn btn-outline-primary btn-sm" for="sourceAgent">Agent's Customer</label>
+            </div>
+
+            <div id="walkinSection">
+                <label class="form-label fw-semibold">Customer <span class="text-danger">*</span></label>
+                <select id="walkinCustomerSelect" name="Input.CustomerId" class="form-select">
+                    <option value="">— Select Customer —</option>
+                    @foreach (var c in Model.WalkinCustomers)
+                    {
+                        <option value="@c.Id">@c.FullName (@c.Phone)</option>
+                    }
+                </select>
+            </div>
+
+            <div id="agentSection" class="d-none">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Agent <span class="text-danger">*</span></label>
+                        <select id="agentSelect" name="Input.AgentId" class="form-select" disabled>
+                            <option value="">— Select Agent —</option>
+                            @foreach (var a in Model.Agents)
+                            {
+                                <option value="@a.Id">@a.FullName (@a.Phone)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Customer <span class="text-danger">*</span></label>
+                        <select id="agentCustomerSelect" name="Input.CustomerId" class="form-select" disabled>
+                            <option value="">— Select Agent first —</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-basket me-2"></i>Order Items</div>
+        <div class="card-body">
+            <table class="table table-sm align-middle mb-2">
+                <thead>
+                    <tr><th>Product</th><th style="width:110px">Quantity</th><th style="width:100px">UOM</th><th style="width:140px">Stock</th><th style="width:40px"></th></tr>
+                </thead>
+                <tbody id="itemsBody"></tbody>
+            </table>
+            <button type="button" id="addItemBtn" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add Item
+            </button>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-card-text me-2"></i>Notes</div>
+        <div class="card-body">
+            <textarea name="Input.Notes" class="form-control" rows="2" placeholder="Optional notes for this order"></textarea>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Create Order</button>
+    <a asp-page="Index" class="btn btn-secondary ms-2">Cancel</a>
+</form>
+
+<!-- Row template for a single order line item; cloned by JS so newly added rows start from pristine markup -->
+<template id="itemRowTemplate">
+    <tr class="item-row">
+        <td>
+            <select class="form-select form-select-sm product-select" required>
+                <option value="">— Select Product —</option>
+                @foreach (var p in Model.Products)
+                {
+                    <option value="@p.Id">@p.Name (@(p.ProductCode ?? "—"))</option>
+                }
+            </select>
+        </td>
+        <td><input type="number" class="form-control form-control-sm qty-input" step="0.001" min="0.001" required /></td>
+        <td class="text-muted small uom-cell">—</td>
+        <td class="text-muted small stock-cell"></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger remove-item-btn"><i class="bi bi-trash"></i></button></td>
+    </tr>
+</template>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- Order For: walk-in vs agent toggle ---
+        const sourceWalkin = document.getElementById('sourceWalkin');
+        const sourceAgent = document.getElementById('sourceAgent');
+        const walkinSection = document.getElementById('walkinSection');
+        const agentSection = document.getElementById('agentSection');
+        const walkinCustomerSelect = document.getElementById('walkinCustomerSelect');
+        const agentSelect = document.getElementById('agentSelect');
+        const agentCustomerSelect = document.getElementById('agentCustomerSelect');
+
+        function updateOrderSourceUI() {
+            const isAgent = sourceAgent.checked;
+            walkinSection.classList.toggle('d-none', isAgent);
+            agentSection.classList.toggle('d-none', !isAgent);
+
+            if (isAgent) {
+                walkinCustomerSelect.tomselect.disable();
+                agentSelect.tomselect.enable();
+                agentCustomerSelect.tomselect.enable();
+            } else {
+                walkinCustomerSelect.tomselect.enable();
+                agentSelect.tomselect.disable();
+                agentCustomerSelect.tomselect.disable();
+            }
+        }
+        sourceWalkin.addEventListener('change', updateOrderSourceUI);
+        sourceAgent.addEventListener('change', updateOrderSourceUI);
+        updateOrderSourceUI();
+
+        agentSelect.tomselect.on('change', async function (agentId) {
+            agentCustomerSelect.tomselect.clear(true);
+            agentCustomerSelect.tomselect.clearOptions();
+            agentCustomerSelect.tomselect.addOption({ value: '', text: agentId ? 'Loading...' : '— Select Agent first —' });
+            agentCustomerSelect.tomselect.refreshOptions(false);
+
+            if (!agentId) return;
+
+            const data = await fetch(`/api/master/agent-customers?agentId=${agentId}`).then(r => r.json());
+            agentCustomerSelect.tomselect.clearOptions();
+            agentCustomerSelect.tomselect.addOption({ value: '', text: data.length ? '— Select Customer —' : 'No customers for this agent' });
+            data.forEach(c => agentCustomerSelect.tomselect.addOption({ value: String(c.id), text: `${c.fullName} (${c.phone})` }));
+            agentCustomerSelect.tomselect.refreshOptions(false);
+        });
+
+        // --- Order Items: repeatable rows ---
+        let itemIndex = 0;
+        const itemsBody = document.getElementById('itemsBody');
+        const template = document.getElementById('itemRowTemplate');
+
+        function addItemRow() {
+            const idx = itemIndex++;
+            const fragment = template.content.cloneNode(true);
+            const tr = fragment.querySelector('.item-row');
+
+            const select = tr.querySelector('.product-select');
+            select.name = `Input.Items[${idx}].ProductId`;
+
+            const qtyInput = tr.querySelector('.qty-input');
+            qtyInput.name = `Input.Items[${idx}].Quantity`;
+
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = `Input.Items[${idx}].UnitOfMeasure`;
+            tr.appendChild(hidden);
+
+            itemsBody.appendChild(tr);
+            window.SadaleneSelects.enhance(select);
+
+            select.tomselect.on('change', async function (productId) {
+                const uomCell = tr.querySelector('.uom-cell');
+                const stockCell = tr.querySelector('.stock-cell');
+                if (!productId) { uomCell.textContent = '—'; stockCell.textContent = ''; hidden.value = ''; return; }
+
+                const info = await fetch(`/api/master/product-info?productId=${productId}`).then(r => r.json());
+                uomCell.textContent = info.uom;
+                stockCell.textContent = `Stock: ${info.stock}`;
+                hidden.value = info.uom;
+            });
+
+            tr.querySelector('.remove-item-btn').addEventListener('click', function () {
+                if (itemsBody.querySelectorAll('.item-row').length > 1) tr.remove();
+            });
+        }
+
+        document.getElementById('addItemBtn').addEventListener('click', addItemRow);
+        addItemRow();
+    });
+</script>
+}

@@ -34,4 +34,30 @@ public class MasterDataController : ControllerBase
             .ToListAsync();
         return Ok(items);
     }
+
+    [HttpGet("agent-customers")]
+    public async Task<IActionResult> GetAgentCustomers(int agentId)
+    {
+        var items = await _db.Customers
+            .Where(c => c.IsActive && c.AgentId == agentId)
+            .OrderBy(c => c.FullName)
+            .Select(c => new { c.Id, c.FullName, c.Phone })
+            .ToListAsync();
+        return Ok(items);
+    }
+
+    [HttpGet("product-info")]
+    public async Task<IActionResult> GetProductInfo(int productId)
+    {
+        var product = await _db.Products
+            .Include(p => p.UomMaster)
+            .FirstOrDefaultAsync(p => p.Id == productId);
+        if (product == null) return NotFound();
+
+        var stock = await _db.InventoryRecords
+            .Where(i => i.ProductId == productId)
+            .SumAsync(i => (decimal?)i.QuantityAvailable) ?? 0;
+
+        return Ok(new { uom = product.UomMaster?.Name ?? "Units", stock });
+    }
 }
