@@ -1,21 +1,33 @@
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('printQrModal');
         if (!modal) return;
 
+        const previewEl = document.getElementById('printQrPreview');
+
         modal.addEventListener('show.bs.modal', function (e) {
             const sku = e.relatedTarget.dataset.sku;
             modal.dataset.currentSku = sku;
             document.getElementById('printQrSku').textContent = sku;
-            QRCode.toCanvas(document.getElementById('printQrPreview'), sku, { width: 140, margin: 1 });
+
+            previewEl.innerHTML = '';
+            new QRCode(previewEl, {
+                text: sku,
+                width: 140,
+                height: 140,
+                correctLevel: QRCode.CorrectLevel.M
+            });
         });
 
-        document.getElementById('confirmPrintQrBtn').addEventListener('click', async function () {
+        document.getElementById('confirmPrintQrBtn').addEventListener('click', function () {
             const sku = modal.dataset.currentSku;
             const qty = Math.max(1, Math.min(500, parseInt(document.getElementById('printQrQty').value, 10) || 1));
 
-            const dataUrl = await QRCode.toDataURL(sku, { margin: 0, width: 300 });
+            const canvas = previewEl.querySelector('canvas');
+            const dataUrl = canvas ? canvas.toDataURL('image/png') : null;
+            if (!dataUrl) { alert('Could not generate the QR code image.'); return; }
+
             const labelsHtml = Array.from({ length: qty }, () => `<div class="label"><img src="${dataUrl}" /></div>`).join('');
 
             const win = window.open('', '_blank', 'width=400,height=400');
