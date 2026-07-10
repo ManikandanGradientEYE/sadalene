@@ -13,6 +13,6 @@ public class Challan : BaseEntity
     public int? OrderId { get; set; }
     public Order? Order { get; set; }
 
-    public string FileUrl { get; set; } = string.Empty;
+    public string? FileUrl { get; set; }
     public DateTime ChallanDate { get; set; }
 }

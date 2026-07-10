@@ -12,7 +12,7 @@ public class ChallanConfiguration : IEntityTypeConfiguration<Challan>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.ChallanNumber).HasMaxLength(50).IsRequired();
-        builder.Property(x => x.FileUrl).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.FileUrl).HasMaxLength(500);
 
         builder.HasIndex(x => x.ChallanNumber).IsUnique();
     }
