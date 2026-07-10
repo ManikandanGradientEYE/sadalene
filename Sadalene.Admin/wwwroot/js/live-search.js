@@ -12,6 +12,7 @@
                     target.innerHTML = html;
                     history.replaceState(null, '', url);
                     wirePageLinks();
+                    if (window.SadaleneSelects) window.SadaleneSelects.enhanceModalsIn(target);
                 });
         }
 

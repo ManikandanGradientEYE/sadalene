@@ -187,41 +187,54 @@
 @section Scripts {
 <partial name="_ValidationScriptsPartial" />
 <script>
-    const divSel  = document.getElementById('divisionSelect');
-    const catSel  = document.getElementById('categorySelect');
-    const subSel  = document.getElementById('subCategorySelect');
-    const uomSel  = document.getElementById('uomSelect');
+    document.addEventListener('DOMContentLoaded', function () {
+        // select-enhance.js wraps every non-modal .form-select on DOMContentLoaded before this
+        // listener runs (registered after it), so .tomselect is guaranteed to exist here.
+        const divSel = document.getElementById('divisionSelect').tomselect;
+        const catSel = document.getElementById('categorySelect').tomselect;
+        const subSel = document.getElementById('subCategorySelect').tomselect;
+        const uomSel = document.getElementById('uomSelect').tomselect;
 
-    divSel.addEventListener('change', async () => {
-        catSel.innerHTML = '<option value="">Loading...</option>';
-        subSel.innerHTML = '<option value="">— Select Category first —</option>';
+        divSel.on('change', async function (divId) {
+            catSel.clear(true);
+            catSel.clearOptions();
+            catSel.addOption({ value: '', text: divId ? 'Loading...' : '— Select Division first —' });
+            catSel.refreshOptions(false);
 
-        const divId = divSel.value;
-        if (!divId) { catSel.innerHTML = '<option value="">— Select Division first —</option>'; return; }
+            subSel.clear(true);
+            subSel.clearOptions();
+            subSel.addOption({ value: '', text: '— Select Category first —' });
+            subSel.refreshOptions(false);
 
-        const data = await fetch(`/api/master/categories?divisionId=${divId}`).then(r => r.json());
-        catSel.innerHTML = '<option value="">— Select Category —</option>';
-        data.forEach(c => catSel.add(new Option(c.name, c.id)));
-    });
+            if (!divId) return;
 
-    catSel.addEventListener('change', async () => {
-        subSel.innerHTML = '<option value="">Loading...</option>';
-        const catId = catSel.value;
-        if (!catId) { subSel.innerHTML = '<option value="">— Select Category first —</option>'; return; }
-
-        const data = await fetch(`/api/master/subcategories?categoryId=${catId}`).then(r => r.json());
-        subSel.innerHTML = '<option value="">— Select Sub-Category —</option>';
-        data.forEach(s => {
-            const opt = new Option(s.name, s.id);
-            opt.dataset.uomMasterId = s.uomMasterId ?? '';
-            subSel.add(opt);
+            const data = await fetch(`/api/master/categories?divisionId=${divId}`).then(r => r.json());
+            catSel.clearOptions();
+            catSel.addOption({ value: '', text: '— Select Category —' });
+            data.forEach(c => catSel.addOption({ value: String(c.id), text: c.name }));
+            catSel.refreshOptions(false);
         });
-    });
 
-    subSel.addEventListener('change', () => {
-        const selected = subSel.options[subSel.selectedIndex];
-        const uomId = selected?.dataset?.uomMasterId ?? '';
-        if (uomId) uomSel.value = uomId;
+        catSel.on('change', async function (catId) {
+            subSel.clear(true);
+            subSel.clearOptions();
+            subSel.addOption({ value: '', text: catId ? 'Loading...' : '— Select Category first —' });
+            subSel.refreshOptions(false);
+
+            if (!catId) return;
+
+            const data = await fetch(`/api/master/subcategories?categoryId=${catId}`).then(r => r.json());
+            subSel.clearOptions();
+            subSel.addOption({ value: '', text: '— Select Sub-Category —' });
+            data.forEach(s => subSel.addOption({ value: String(s.id), text: s.name, uomMasterId: s.uomMasterId ?? '' }));
+            subSel.refreshOptions(false);
+        });
+
+        subSel.on('change', function (subId) {
+            const opt = subSel.options[subId];
+            const uomId = opt && opt.uomMasterId ? String(opt.uomMasterId) : '';
+            if (uomId) uomSel.setValue(uomId);
+        });
     });
 </script>
 }
