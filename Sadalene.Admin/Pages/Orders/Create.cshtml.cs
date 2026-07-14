@@ -21,7 +21,6 @@ public class CreateModel : PageModel
 
     public List<Customer> WalkinCustomers { get; set; } = [];
     public List<Agent> Agents { get; set; } = [];
-    public List<Product> Products { get; set; } = [];
 
     public class InputModel
     {
@@ -57,15 +56,27 @@ public class CreateModel : PageModel
 
         Input.Items = Input.Items.Where(i => i.ProductId != 0).ToList();
         if (Input.Items.Count == 0)
-            ModelState.AddModelError(string.Empty, "Add at least one product to the order.");
+            ModelState.AddModelError(string.Empty, "Scan at least one product into the order.");
 
         if (Input.CustomerId == 0)
             ModelState.AddModelError(string.Empty, "Please select a customer.");
 
+        // Only fetch the handful of products actually referenced by this order — the catalog can run
+        // into the tens of thousands, so loading it wholesale here (like the dropdown used to) doesn't scale.
+        var productIds = Input.Items.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _db.Products
+            .Include(p => p.UomMaster)
+            .Include(p => p.InventoryRecords)
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id);
+
         foreach (var item in Input.Items)
         {
-            var product = Products.FirstOrDefault(p => p.Id == item.ProductId);
-            if (product == null) continue;
+            if (!products.TryGetValue(item.ProductId, out var product))
+            {
+                ModelState.AddModelError(string.Empty, "One of the scanned products could not be found.");
+                continue;
+            }
 
             var stock = product.InventoryRecords.Sum(i => i.QuantityAvailable);
             if (item.EffectiveQuantity > stock)
@@ -108,7 +119,7 @@ public class CreateModel : PageModel
 
         foreach (var item in Input.Items)
         {
-            var product = Products.FirstOrDefault(p => p.Id == item.ProductId);
+            var product = products.GetValueOrDefault(item.ProductId);
             order.Items.Add(new OrderItem
             {
                 ProductId           = item.ProductId,
@@ -137,13 +148,6 @@ public class CreateModel : PageModel
         Agents = await _db.Agents
             .Where(a => a.IsActive)
             .OrderBy(a => a.FullName)
-            .ToListAsync();
-
-        Products = await _db.Products
-            .Include(p => p.UomMaster)
-            .Include(p => p.InventoryRecords)
-            .Where(p => p.IsActive)
-            .OrderBy(p => p.Name)
             .ToListAsync();
     }
 }

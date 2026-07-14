@@ -66,21 +66,19 @@
                 <label class="form-label fw-semibold">Scan Barcode / QR Code</label>
                 <div class="input-group" style="max-width:420px">
                     <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
-                    <input type="text" id="scanInput" class="form-control" placeholder="Scan or type SKU, then press Enter" autocomplete="off" />
+                    <input type="text" id="scanInput" class="form-control" placeholder="Scan or type SKU, then press Enter" autocomplete="off" autofocus />
                 </div>
                 <div id="scanFeedback" class="small mt-1"></div>
-                <div class="form-text">Works with a USB/Bluetooth barcode or QR scanner (types like a keyboard), or type the SKU by hand and press Enter. Only adds a product if it's found in stock.</div>
+                <div class="form-text">Every item is added by scanning its barcode/QR (or typing the SKU and pressing Enter) — only adds a product if it's found in stock.</div>
             </div>
 
-            <table class="table table-sm align-middle mb-2">
+            <table class="table table-sm align-middle mb-0">
                 <thead>
                     <tr><th>Product</th><th style="width:100px">Quantity</th><th style="width:150px">Type</th><th style="width:90px">UOM</th><th style="width:140px">Stock</th><th style="width:40px"></th></tr>
                 </thead>
                 <tbody id="itemsBody"></tbody>
             </table>
-            <button type="button" id="addItemBtn" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-plus-lg me-1"></i>Add Item
-            </button>
+            <div id="noItemsMessage" class="text-muted small text-center py-3">No items scanned yet.</div>
         </div>
     </div>
 
@@ -96,26 +94,24 @@
     <a asp-page="Index" class="btn btn-secondary ms-2">Cancel</a>
 </form>
 
-<!-- Row template for a single order line item; cloned by JS so newly added rows start from pristine markup -->
+<!-- Row template for a single order line item; cloned by JS so newly added rows start from pristine markup.
+     The Type <td> is always rendered (never display:none) — hiding the whole cell instead of just its
+     content would leave the row with fewer cells than the header, misaligning every column after it. -->
 <template id="itemRowTemplate">
     <tr class="item-row">
         <td>
-            <select class="form-select form-select-sm product-select" required>
-                <option value="">— Select Product —</option>
-                @foreach (var p in Model.Products)
-                {
-                    <option value="@p.Id">@p.Name (@(p.ProductCode ?? "—"))</option>
-                }
-            </select>
+            <div class="fw-semibold product-name-cell"></div>
+            <div class="text-muted small font-monospace product-code-cell"></div>
         </td>
         <td><input type="number" class="form-control form-control-sm qty-input" step="0.001" min="0.001" required /></td>
-        <td class="unit-type-cell d-none">
-            <div class="btn-group btn-group-sm w-100" role="group">
+        <td>
+            <div class="btn-group btn-group-sm w-100 unit-type-toggle d-none" role="group">
                 <input type="radio" class="btn-check unit-full-radio" autocomplete="off" checked>
                 <label class="btn btn-outline-secondary unit-full-label">Full</label>
                 <input type="radio" class="btn-check unit-half-radio" autocomplete="off">
                 <label class="btn btn-outline-secondary unit-half-label">Half</label>
             </div>
+            <span class="text-muted unit-type-dash">—</span>
             <div class="text-muted small eff-qty-cell"></div>
         </td>
         <td class="text-muted small uom-cell">—</td>
@@ -171,17 +167,23 @@
             agentCustomerSelect.tomselect.refreshOptions(false);
         });
 
-        // --- Order Items: repeatable rows ---
+        // --- Order Items: rows are only ever created by scanning a SKU (no product dropdown —
+        // the catalog can run into the tens of thousands, too many for a picker) ---
         let itemIndex = 0;
         const itemsBody = document.getElementById('itemsBody');
         const template = document.getElementById('itemRowTemplate');
+        const noItemsMessage = document.getElementById('noItemsMessage');
 
         // Tracks which row currently holds a given productId, so scanning the same SKU twice
         // increments that row's quantity instead of adding a duplicate row.
         const rowsByProductId = new Map();
 
+        function refreshEmptyState() {
+            noItemsMessage.classList.toggle('d-none', itemsBody.querySelectorAll('.item-row').length > 0);
+        }
+
         function currentMultiplier(rowRefs) {
-            return !rowRefs.unitTypeCell.classList.contains('d-none') && rowRefs.halfRadio.checked ? 0.5 : 1;
+            return !rowRefs.unitTypeToggle.classList.contains('d-none') && rowRefs.halfRadio.checked ? 0.5 : 1;
         }
 
         function updateRowMaxAndHint(rowRefs) {
@@ -191,7 +193,7 @@
 
             qtyInput.max = mult > 0 ? stock / mult : stock;
 
-            if (rowRefs.unitTypeCell.classList.contains('d-none')) {
+            if (rowRefs.unitTypeToggle.classList.contains('d-none')) {
                 effQtyCell.textContent = '';
                 return;
             }
@@ -199,54 +201,26 @@
             effQtyCell.textContent = `= ${(qty * mult).toFixed(2)} ${uomHidden.value}`;
         }
 
-        async function applyProductInfo(rowRefs, productId) {
-            const { tr, uomCell, stockCell, uomHidden, qtyInput, unitTypeCell, fullRadio, halfRadio, unitTypeHidden } = rowRefs;
-
-            for (const [pid, row] of rowsByProductId) if (row === tr) rowsByProductId.delete(pid);
-
-            if (!productId) {
-                uomCell.textContent = '—';
-                stockCell.textContent = '';
-                uomHidden.value = '';
-                qtyInput.removeAttribute('max');
-                unitTypeCell.classList.add('d-none');
-                fullRadio.checked = true;
-                unitTypeHidden.value = 'Full';
-                rowRefs.effQtyCell.textContent = '';
-                return null;
-            }
-
-            const info = await fetch(`/api/master/product-info?productId=${productId}`).then(r => r.json());
-            uomCell.textContent = info.uom;
-            stockCell.textContent = `Stock: ${info.stock}`;
-            uomHidden.value = info.uom;
-            tr.dataset.stock = info.stock;
-
-            unitTypeCell.classList.toggle('d-none', !info.allowsHalfUnit);
-            if (!info.allowsHalfUnit) {
-                fullRadio.checked = true;
-                unitTypeHidden.value = 'Full';
-            }
-
-            updateRowMaxAndHint(rowRefs);
-            rowsByProductId.set(String(productId), tr);
-            return info;
-        }
-
-        function addItemRow() {
+        function addItemRow(info, sku) {
             const idx = itemIndex++;
             const fragment = template.content.cloneNode(true);
             const tr = fragment.querySelector('.item-row');
 
-            const select = tr.querySelector('.product-select');
-            select.name = `Input.Items[${idx}].ProductId`;
+            tr.querySelector('.product-name-cell').textContent = info.name;
+            tr.querySelector('.product-code-cell').textContent = info.code;
+
+            const productIdHidden = document.createElement('input');
+            productIdHidden.type = 'hidden';
+            productIdHidden.name = `Input.Items[${idx}].ProductId`;
+            productIdHidden.value = info.id;
+            tr.appendChild(productIdHidden);
 
             const qtyInput = tr.querySelector('.qty-input');
             qtyInput.name = `Input.Items[${idx}].Quantity`;
+            qtyInput.value = 1;
 
-            const uomCell = tr.querySelector('.uom-cell');
-            const stockCell = tr.querySelector('.stock-cell');
-            const unitTypeCell = tr.querySelector('.unit-type-cell');
+            const unitTypeToggle = tr.querySelector('.unit-type-toggle');
+            const unitTypeDash = tr.querySelector('.unit-type-dash');
             const fullRadio = tr.querySelector('.unit-full-radio');
             const halfRadio = tr.querySelector('.unit-half-radio');
             const effQtyCell = tr.querySelector('.eff-qty-cell');
@@ -262,6 +236,7 @@
             const uomHidden = document.createElement('input');
             uomHidden.type = 'hidden';
             uomHidden.name = `Input.Items[${idx}].UnitOfMeasure`;
+            uomHidden.value = info.uom;
             tr.appendChild(uomHidden);
 
             const unitTypeHidden = document.createElement('input');
@@ -273,25 +248,23 @@
             const scanFlagHidden = document.createElement('input');
             scanFlagHidden.type = 'hidden';
             scanFlagHidden.name = `Input.Items[${idx}].AddedByBarcodeScan`;
-            scanFlagHidden.value = 'false';
+            scanFlagHidden.value = 'true';
             tr.appendChild(scanFlagHidden);
 
             const scanValueHidden = document.createElement('input');
             scanValueHidden.type = 'hidden';
             scanValueHidden.name = `Input.Items[${idx}].ScannedBarcodeValue`;
+            scanValueHidden.value = sku;
             tr.appendChild(scanValueHidden);
 
-            itemsBody.appendChild(tr);
-            window.SadaleneSelects.enhance(select);
+            tr.querySelector('.uom-cell').textContent = info.uom;
+            tr.querySelector('.stock-cell').textContent = `Stock: ${info.stock}`;
+            tr.dataset.stock = info.stock;
 
-            const rowRefs = {
-                tr, uomCell, stockCell, uomHidden, qtyInput,
-                unitTypeCell, fullRadio, halfRadio, effQtyCell, unitTypeHidden
-            };
+            const rowRefs = { tr, qtyInput, unitTypeToggle, unitTypeDash, fullRadio, halfRadio, effQtyCell, uomHidden };
 
-            select.tomselect.on('change', function (productId) {
-                applyProductInfo(rowRefs, productId);
-            });
+            unitTypeToggle.classList.toggle('d-none', !info.allowsHalfUnit);
+            unitTypeDash.classList.toggle('d-none', info.allowsHalfUnit);
 
             fullRadio.addEventListener('change', function () {
                 unitTypeHidden.value = 'Full';
@@ -304,20 +277,20 @@
             qtyInput.addEventListener('input', function () { updateRowMaxAndHint(rowRefs); });
 
             tr.querySelector('.remove-item-btn').addEventListener('click', function () {
-                if (itemsBody.querySelectorAll('.item-row').length > 1) {
-                    for (const [pid, row] of rowsByProductId) if (row === tr) rowsByProductId.delete(pid);
-                    tr.remove();
-                }
+                for (const [pid, row] of rowsByProductId) if (row === tr) rowsByProductId.delete(pid);
+                tr.remove();
+                refreshEmptyState();
             });
 
-            return {
-                tr, select, qtyInput, scanFlagHidden, scanValueHidden,
-                applyProductInfo: (productId) => applyProductInfo(rowRefs, productId)
-            };
+            itemsBody.appendChild(tr);
+            updateRowMaxAndHint(rowRefs);
+            rowsByProductId.set(String(info.id), tr);
+            refreshEmptyState();
+
+            return { tr, qtyInput };
         }
 
-        document.getElementById('addItemBtn').addEventListener('click', () => addItemRow());
-        addItemRow();
+        refreshEmptyState();
 
         // --- Scan Barcode / QR Code ---
         const scanInput = document.getElementById('scanInput');
@@ -357,8 +330,8 @@
             if (existingRow) {
                 const qtyInput = existingRow.querySelector('.qty-input');
                 const halfRadio = existingRow.querySelector('.unit-half-radio');
-                const unitTypeCell = existingRow.querySelector('.unit-type-cell');
-                const mult = (!unitTypeCell.classList.contains('d-none') && halfRadio.checked) ? 0.5 : 1;
+                const unitTypeToggle = existingRow.querySelector('.unit-type-toggle');
+                const mult = (!unitTypeToggle.classList.contains('d-none') && halfRadio.checked) ? 0.5 : 1;
                 const newQty = (parseFloat(qtyInput.value) || 0) + 1;
 
                 if (newQty * mult > info.stock) {
@@ -366,17 +339,11 @@
                 } else {
                     qtyInput.value = newQty;
                     qtyInput.dispatchEvent(new Event('input'));
-                    existingRow.querySelector('input[name$=".AddedByBarcodeScan"]').value = 'true';
                     existingRow.querySelector('input[name$=".ScannedBarcodeValue"]').value = sku;
                     showScanFeedback(`+1 ${info.name} (now ${newQty} ${info.uom}).`, false);
                 }
             } else {
-                const row = addItemRow();
-                row.select.tomselect.setValue(String(info.id), true);
-                await row.applyProductInfo(String(info.id));
-                row.qtyInput.value = 1;
-                row.scanFlagHidden.value = 'true';
-                row.scanValueHidden.value = sku;
+                addItemRow(info, sku);
                 showScanFeedback(`Added ${info.name} (${info.code}).`, false);
             }
 
