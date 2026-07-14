@@ -1,0 +1,59 @@
+@page
+@model Sadalene.Admin.Pages.Masters.Divisions.ImportModel
+@{
+    ViewData["Title"] = "Import Divisions";
+    ViewData["ActiveMenu"] = "Divisions";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Import Divisions from Excel</h5>
+</div>
+
+<div class="card mb-4" style="max-width:700px">
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Download the template, fill in your divisions, then upload it below. Columns marked with
+            <span class="text-danger fw-semibold">*</span> are required.
+        </p>
+        <p class="text-muted small mb-3">
+            <i class="bi bi-info-circle me-1"></i><strong>Name</strong> and <strong>Code</strong> must each be unique —
+            rows that clash with an existing division (or another row in the same file) are skipped.
+            <strong>Code</strong> and <strong>Description</strong> are optional.
+        </p>
+        <a asp-page-handler="Template" class="btn btn-outline-secondary btn-sm mb-4">
+            <i class="bi bi-download me-1"></i>Download Excel Template
+        </a>
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Excel File</label>
+                <input type="file" name="file" class="form-control" accept=".xlsx" required />
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Import</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.ImportedCount > 0 || Model.Errors.Count > 0)
+{
+    <div class="card" style="max-width:700px">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3">Import Result</h6>
+            @if (Model.ImportedCount > 0)
+            {
+                <p class="text-success mb-2"><i class="bi bi-check-circle me-1"></i>@Model.ImportedCount division(s) imported successfully.</p>
+            }
+            @if (Model.Errors.Count > 0)
+            {
+                <p class="text-danger fw-semibold mb-2">@Model.Errors.Count row(s) skipped:</p>
+                <ul class="text-danger small mb-0">
+                    @foreach (var e in Model.Errors)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}
