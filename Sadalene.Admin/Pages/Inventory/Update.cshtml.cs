@@ -30,27 +30,10 @@ public class UpdateModel : PageModel
         ("SKU", true), ("ProductName", false), ("Quantity", true)
     ];
 
-    public int? DivisionId { get; set; }
-    public int? CategoryId { get; set; }
-    public int? SubCategoryId { get; set; }
-    public string? DivisionName { get; set; }
-    public string? CategoryName { get; set; }
-    public string? SubCategoryName { get; set; }
+    public void OnGet() { }
 
-    public async Task OnGetAsync(int? divisionId, int? categoryId, int? subCategoryId)
-    {
-        DivisionId = divisionId;
-        CategoryId = categoryId;
-        SubCategoryId = subCategoryId;
-
-        if (divisionId.HasValue)
-            DivisionName = await _db.Divisions.Where(d => d.Id == divisionId).Select(d => d.Name).FirstOrDefaultAsync();
-        if (categoryId.HasValue)
-            CategoryName = await _db.Categories.Where(c => c.Id == categoryId).Select(c => c.Name).FirstOrDefaultAsync();
-        if (subCategoryId.HasValue)
-            SubCategoryName = await _db.SubCategories.Where(s => s.Id == subCategoryId).Select(s => s.Name).FirstOrDefaultAsync();
-    }
-
+    // Still used by the "Download Stock" button on the Inventory list, which links straight to this
+    // handler with whatever Division/Category/SubCategory filter is currently applied there.
     public async Task<IActionResult> OnGetTemplateAsync(int? divisionId, int? categoryId, int? subCategoryId)
     {
         using var wb = new XLWorkbook();
@@ -95,7 +78,7 @@ public class UpdateModel : PageModel
         wb.SaveAs(stream);
         return File(stream.ToArray(),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Inventory-Update-Template.xlsx");
+            "Inventory-Stock.xlsx");
     }
 
     public async Task<IActionResult> OnPostAsync(IFormFile? file)

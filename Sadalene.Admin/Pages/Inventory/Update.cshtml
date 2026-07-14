@@ -13,8 +13,9 @@
 <div class="card mb-4" style="max-width:700px">
     <div class="card-body">
         <p class="text-muted small mb-3">
-            Download the current stock as a starting point, edit only the SKUs whose quantity changed, then
-            upload it below. Columns marked with <span class="text-danger fw-semibold">*</span> are required.
+            Use "Download Stock" on the Inventory list to export the current stock (optionally scoped to a
+            Division/Category/Sub-Category filter) as a starting point, edit only the SKUs whose quantity changed,
+            then upload it below. Columns marked with <span class="text-danger fw-semibold">*</span> are required.
         </p>
         <p class="text-muted small mb-3">
             <i class="bi bi-info-circle me-1"></i>Only rows whose <strong>Quantity</strong> is different from the
@@ -22,19 +23,6 @@
             full sheet every time instead of trimming it down to just the changes.
             <strong>ProductName</strong> is for reference only and is ignored on import.
         </p>
-        @if (Model.DivisionId.HasValue || Model.CategoryId.HasValue || Model.SubCategoryId.HasValue)
-        {
-            <p class="small mb-3">
-                <i class="bi bi-funnel me-1"></i>Scoped to
-                <strong>@(Model.DivisionName ?? "—")@(Model.CategoryName != null ? " / " + Model.CategoryName : "")@(Model.SubCategoryName != null ? " / " + Model.SubCategoryName : "")</strong>
-                — carried over from the Inventory list filter. The download below only includes matching SKUs.
-                <a asp-page="Update" class="ms-1">Clear</a>
-            </p>
-        }
-        <a asp-page-handler="Template" asp-route-divisionId="@Model.DivisionId" asp-route-categoryId="@Model.CategoryId"
-           asp-route-subCategoryId="@Model.SubCategoryId" class="btn btn-outline-secondary btn-sm mb-4">
-            <i class="bi bi-download me-1"></i>Download Current Stock (Excel)
-        </a>
 
         <form method="post" enctype="multipart/form-data">
             <div class="mb-3">
