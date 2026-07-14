@@ -1,4 +1,5 @@
 @page
+@using Microsoft.AspNetCore.Mvc.Rendering
 @model Sadalene.Admin.Pages.Inventory.IndexModel
 @{
     ViewData["Title"] = "Inventory";
@@ -7,7 +8,8 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0 fw-bold"><i class="bi bi-boxes me-2"></i>Inventory</h5>
-    <a asp-page="Update" class="btn btn-outline-secondary btn-sm">
+    <a asp-page="Update" asp-route-divisionId="@Model.DivisionId" asp-route-categoryId="@Model.CategoryId"
+       asp-route-subCategoryId="@Model.SubCategoryId" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-upload me-1"></i>Update Inventory
     </a>
 </div>
@@ -28,9 +30,30 @@
 } *@
 
 <!-- Stock Levels -->
-<div class="mb-3" data-live-search data-target="#inventory-table-region">
-    <input data-search-input type="text" class="form-control" style="max-width:320px"
-           placeholder="Search by product name or SKU..." value="@Model.Search" />
+<div class="row g-2 mb-3" data-live-search data-target="#inventory-table-region">
+    <div class="col-auto">
+        <input data-search-input type="text" class="form-control" style="min-width:260px"
+               placeholder="Search by product name or SKU..." value="@Model.Search" />
+    </div>
+    <div class="col-auto">
+        <select id="filterDivision" class="form-select" style="min-width:180px">
+            <option value="">All Divisions</option>
+            @foreach (SelectListItem item in Model.Divisions)
+            {
+                <option value="@item.Value" selected="@(Model.DivisionId.HasValue && Model.DivisionId.Value.ToString() == item.Value)">@item.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <select id="filterCategory" class="form-select" style="min-width:180px">
+            <option value="">All Categories</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <select id="filterSubCategory" class="form-select" style="min-width:180px">
+            <option value="">All Sub-Categories</option>
+        </select>
+    </div>
 </div>
 <div id="inventory-table-region">
     <partial name="_InventoryTable" model="Model" />
@@ -173,6 +196,79 @@
         document.getElementById('typeAdd').checked = true;
         document.querySelector('[name="quantity"]').value = '';
         document.querySelector('[name="reason"]').value = '';
+    });
+
+    document.addEventListener('DOMContentLoaded', async function () {
+        const savedDivId = @(Model.DivisionId?.ToString() ?? "null");
+        const savedCatId = @(Model.CategoryId?.ToString() ?? "null");
+        const savedSubId = @(Model.SubCategoryId?.ToString() ?? "null");
+
+        // select-enhance.js wraps every non-modal .form-select on DOMContentLoaded before this
+        // listener runs (registered after it), so .tomselect is guaranteed to exist here.
+        const divSel = document.getElementById('filterDivision').tomselect;
+        const catSel = document.getElementById('filterCategory').tomselect;
+        const subSel = document.getElementById('filterSubCategory').tomselect;
+
+        function reloadInventory(overrides) {
+            window.SadaleneLiveSearch.reload('#inventory-table-region', overrides);
+        }
+
+        async function loadCategories(divId, selectValue) {
+            catSel.clear(true);
+            catSel.clearOptions();
+            catSel.addOption({ value: '', text: 'All Categories' });
+            catSel.refreshOptions(false);
+
+            subSel.clear(true);
+            subSel.clearOptions();
+            subSel.addOption({ value: '', text: 'All Sub-Categories' });
+            subSel.refreshOptions(false);
+
+            if (!divId) return;
+
+            const data = await fetch(`/api/master/categories?divisionId=${divId}`).then(r => r.json());
+            catSel.clearOptions();
+            catSel.addOption({ value: '', text: 'All Categories' });
+            data.forEach(c => catSel.addOption({ value: String(c.id), text: c.name }));
+            catSel.refreshOptions(false);
+            if (selectValue) catSel.setValue(String(selectValue), true);
+        }
+
+        async function loadSubCategories(catId, selectValue) {
+            subSel.clear(true);
+            subSel.clearOptions();
+            subSel.addOption({ value: '', text: 'All Sub-Categories' });
+            subSel.refreshOptions(false);
+
+            if (!catId) return;
+
+            const data = await fetch(`/api/master/subcategories?categoryId=${catId}`).then(r => r.json());
+            subSel.clearOptions();
+            subSel.addOption({ value: '', text: 'All Sub-Categories' });
+            data.forEach(s => subSel.addOption({ value: String(s.id), text: s.name }));
+            subSel.refreshOptions(false);
+            if (selectValue) subSel.setValue(String(selectValue), true);
+        }
+
+        // Initialise cascades with any filter already present in the URL (e.g. a bookmarked link) —
+        // setValue's silent flag (true) avoids firing 'change' and triggering a redundant reload,
+        // since the server already rendered the table filtered to these values.
+        await loadCategories(savedDivId, savedCatId);
+        await loadSubCategories(savedCatId, savedSubId);
+
+        divSel.on('change', function (divId) {
+            loadCategories(divId, null);
+            reloadInventory({ divisionId: divId, categoryId: '', subCategoryId: '' });
+        });
+
+        catSel.on('change', function (catId) {
+            loadSubCategories(catId, null);
+            reloadInventory({ divisionId: divSel.getValue(), categoryId: catId, subCategoryId: '' });
+        });
+
+        subSel.on('change', function (subId) {
+            reloadInventory({ divisionId: divSel.getValue(), categoryId: catSel.getValue(), subCategoryId: subId });
+        });
     });
 </script>
 }

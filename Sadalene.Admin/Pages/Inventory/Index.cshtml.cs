@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Sadalene.Core.Common;
 using Sadalene.Core.Entities.Inventory;
@@ -19,14 +20,21 @@ public class IndexModel : PageModel
     public PagedResult<InventoryRecord> Inventory { get; set; } = new();
     public int OutOfStockCount { get; set; }
     public string? Search { get; set; }
+    public int? DivisionId { get; set; }
+    public int? CategoryId { get; set; }
+    public int? SubCategoryId { get; set; }
+    public SelectList Divisions { get; set; } = null!;
 
     public List<InventoryAdjustmentLog> AdjustmentLogs { get; set; } = [];
     public List<InventorySyncLog> SyncLogs { get; set; } = [];
     public InventorySyncLog? LastSync { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(string? search, int pageNumber = 1)
+    public async Task<IActionResult> OnGetAsync(string? search, int? divisionId, int? categoryId, int? subCategoryId, int pageNumber = 1)
     {
         Search = search;
+        DivisionId = divisionId;
+        CategoryId = categoryId;
+        SubCategoryId = subCategoryId;
 
         var query = _db.InventoryRecords
             .Include(i => i.Product).ThenInclude(p => p.Division)
@@ -41,6 +49,10 @@ public class IndexModel : PageModel
                 (i.Product.ProductCode != null && i.Product.ProductCode.Contains(term)));
         }
 
+        if (divisionId.HasValue) query = query.Where(i => i.Product.DivisionId == divisionId);
+        if (categoryId.HasValue) query = query.Where(i => i.Product.CategoryId == categoryId);
+        if (subCategoryId.HasValue) query = query.Where(i => i.Product.SubCategoryId == subCategoryId);
+
         OutOfStockCount = await query.CountAsync(i => i.QuantityAvailable == 0);
 
         Inventory = await query
@@ -49,6 +61,8 @@ public class IndexModel : PageModel
 
         if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             return Partial("_InventoryTable", this);
+
+        Divisions = new SelectList(await _db.Divisions.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync(), "Id", "Name");
 
         AdjustmentLogs = await _db.InventoryAdjustmentLogs
             .Include(a => a.Product)

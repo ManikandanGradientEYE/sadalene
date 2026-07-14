@@ -1,6 +1,10 @@
 (function () {
     'use strict';
 
+    // Keyed by the region's target selector, so pages can trigger a reload (e.g. from a custom
+    // filter dropdown) without duplicating the fetch/history/page-link wiring logic below.
+    var regions = {};
+
     function wireRegion(box) {
         var target = document.querySelector(box.dataset.target);
         if (!target) return;
@@ -40,7 +44,23 @@
         }
 
         wirePageLinks();
+
+        regions[box.dataset.target] = load;
     }
 
     document.querySelectorAll('[data-live-search]').forEach(wireRegion);
+
+    window.SadaleneLiveSearch = {
+        reload: function (targetSelector, overrides) {
+            var load = regions[targetSelector];
+            if (!load) return;
+            var url = new URL(window.location.href);
+            Object.keys(overrides || {}).forEach(function (key) {
+                if (overrides[key]) url.searchParams.set(key, overrides[key]);
+                else url.searchParams.delete(key);
+            });
+            url.searchParams.set('pageNumber', '1');
+            load(url.toString());
+        }
+    };
 })();

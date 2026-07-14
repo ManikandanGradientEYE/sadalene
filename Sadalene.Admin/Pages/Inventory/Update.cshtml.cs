@@ -30,9 +30,28 @@ public class UpdateModel : PageModel
         ("SKU", true), ("ProductName", false), ("Quantity", true)
     ];
 
-    public void OnGet() { }
+    public int? DivisionId { get; set; }
+    public int? CategoryId { get; set; }
+    public int? SubCategoryId { get; set; }
+    public string? DivisionName { get; set; }
+    public string? CategoryName { get; set; }
+    public string? SubCategoryName { get; set; }
 
-    public async Task<IActionResult> OnGetTemplateAsync()
+    public async Task OnGetAsync(int? divisionId, int? categoryId, int? subCategoryId)
+    {
+        DivisionId = divisionId;
+        CategoryId = categoryId;
+        SubCategoryId = subCategoryId;
+
+        if (divisionId.HasValue)
+            DivisionName = await _db.Divisions.Where(d => d.Id == divisionId).Select(d => d.Name).FirstOrDefaultAsync();
+        if (categoryId.HasValue)
+            CategoryName = await _db.Categories.Where(c => c.Id == categoryId).Select(c => c.Name).FirstOrDefaultAsync();
+        if (subCategoryId.HasValue)
+            SubCategoryName = await _db.SubCategories.Where(s => s.Id == subCategoryId).Select(s => s.Name).FirstOrDefaultAsync();
+    }
+
+    public async Task<IActionResult> OnGetTemplateAsync(int? divisionId, int? categoryId, int? subCategoryId)
     {
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("Inventory");
@@ -47,9 +66,15 @@ public class UpdateModel : PageModel
         }
 
         // Pre-fill with the current stock so the file can be edited in place and re-uploaded —
-        // rows left unchanged are ignored on import, only actual differences get applied.
-        var current = await _db.InventoryRecords
-            .Include(i => i.Product)
+        // rows left unchanged are ignored on import, only actual differences get applied. Scoped to
+        // whatever Division/Category/SubCategory filter the user had applied on the Inventory list,
+        // so a bulk update can target just one slice of a very large catalog.
+        var query = _db.InventoryRecords.Include(i => i.Product).AsQueryable();
+        if (divisionId.HasValue) query = query.Where(i => i.Product.DivisionId == divisionId);
+        if (categoryId.HasValue) query = query.Where(i => i.Product.CategoryId == categoryId);
+        if (subCategoryId.HasValue) query = query.Where(i => i.Product.SubCategoryId == subCategoryId);
+
+        var current = await query
             .OrderBy(i => i.Product.ProductCode)
             .Select(i => new { Sku = i.Product.ProductCode, Name = i.Product.Name, i.QuantityAvailable })
             .ToListAsync();
