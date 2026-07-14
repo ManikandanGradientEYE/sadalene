@@ -1,0 +1,64 @@
+@page
+@model Sadalene.Admin.Pages.Inventory.UpdateModel
+@{
+    ViewData["Title"] = "Update Inventory";
+    ViewData["ActiveMenu"] = "Inventory";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Update Inventory from Excel</h5>
+</div>
+
+<div class="card mb-4" style="max-width:700px">
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Download the current stock as a starting point, edit only the SKUs whose quantity changed, then
+            upload it below. Columns marked with <span class="text-danger fw-semibold">*</span> are required.
+        </p>
+        <p class="text-muted small mb-3">
+            <i class="bi bi-info-circle me-1"></i>Only rows whose <strong>Quantity</strong> is different from the
+            current stock are updated — rows that already match are left untouched, so it's safe to re-upload the
+            full sheet every time instead of trimming it down to just the changes.
+            <strong>ProductName</strong> is for reference only and is ignored on import.
+        </p>
+        <a asp-page-handler="Template" class="btn btn-outline-secondary btn-sm mb-4">
+            <i class="bi bi-download me-1"></i>Download Current Stock (Excel)
+        </a>
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Excel File</label>
+                <input type="file" name="file" class="form-control" accept=".xlsx" required />
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Update Inventory</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.UpdatedCount > 0 || Model.UnchangedCount > 0 || Model.Errors.Count > 0)
+{
+    <div class="card" style="max-width:700px">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3">Update Result</h6>
+            @if (Model.UpdatedCount > 0)
+            {
+                <p class="text-success mb-2"><i class="bi bi-check-circle me-1"></i>@Model.UpdatedCount SKU(s) updated.</p>
+            }
+            @if (Model.UnchangedCount > 0)
+            {
+                <p class="text-muted mb-2"><i class="bi bi-dash-circle me-1"></i>@Model.UnchangedCount SKU(s) already matched — left unchanged.</p>
+            }
+            @if (Model.Errors.Count > 0)
+            {
+                <p class="text-danger fw-semibold mb-2">@Model.Errors.Count row(s) skipped:</p>
+                <ul class="text-danger small mb-0">
+                    @foreach (var e in Model.Errors)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}

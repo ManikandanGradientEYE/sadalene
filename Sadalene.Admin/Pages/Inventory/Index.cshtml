@@ -5,14 +5,17 @@
     ViewData["ActiveMenu"] = "Inventory";
 }
 
-@* <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0 fw-bold"><i class="bi bi-boxes me-2"></i>Inventory</h5>
-    <form method="post" asp-page-handler="Sync">
-        <button class="btn btn-outline-success btn-sm" type="submit">
-            <i class="bi bi-arrow-repeat me-1"></i>Run Sync
-        </button>
-    </form>
+    <a asp-page="Update" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-upload me-1"></i>Update Inventory
+    </a>
 </div>
+@* <form method="post" asp-page-handler="Sync">
+    <button class="btn btn-outline-success btn-sm" type="submit">
+        <i class="bi bi-arrow-repeat me-1"></i>Run Sync
+    </button>
+</form>
  *@
 @* @if (Model.LastSync != null)
 {

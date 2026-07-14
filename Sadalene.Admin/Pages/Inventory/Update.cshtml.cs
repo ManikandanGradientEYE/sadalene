@@ -1,0 +1,207 @@
+using System.Globalization;
+using System.Security.Claims;
+using ClosedXML.Excel;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using Sadalene.Core.Entities.Inventory;
+using Sadalene.Core.Entities.Products;
+using Sadalene.Infrastructure.Data;
+
+namespace Sadalene.Admin.Pages.Inventory;
+
+[RequestSizeLimit(20_000_000)]
+public class UpdateModel : PageModel
+{
+    private const int SkuBatchSize = 500;
+
+    private readonly ApplicationDbContext _db;
+    public UpdateModel(ApplicationDbContext db) => _db = db;
+
+    public List<string> Errors { get; set; } = [];
+    public int UpdatedCount { get; set; }
+    public int UnchangedCount { get; set; }
+
+    private static readonly string[] RequiredHeaders = ["SKU", "Quantity"];
+    private static readonly (string Header, bool Required)[] TemplateColumns =
+    [
+        ("SKU", true), ("ProductName", false), ("Quantity", true)
+    ];
+
+    public void OnGet() { }
+
+    public async Task<IActionResult> OnGetTemplateAsync()
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Inventory");
+
+        for (int i = 0; i < TemplateColumns.Length; i++)
+        {
+            var (header, required) = TemplateColumns[i];
+            var cell = ws.Cell(1, i + 1);
+            cell.Value = required ? $"{header}*" : header;
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = required ? XLColor.FromHtml("#fde8e8") : XLColor.FromHtml("#eef2f7");
+        }
+
+        // Pre-fill with the current stock so the file can be edited in place and re-uploaded —
+        // rows left unchanged are ignored on import, only actual differences get applied.
+        var current = await _db.InventoryRecords
+            .Include(i => i.Product)
+            .OrderBy(i => i.Product.ProductCode)
+            .Select(i => new { Sku = i.Product.ProductCode, Name = i.Product.Name, i.QuantityAvailable })
+            .ToListAsync();
+
+        int row = 2;
+        foreach (var rec in current)
+        {
+            ws.Cell(row, 1).Value = rec.Sku;
+            ws.Cell(row, 2).Value = rec.Name;
+            ws.Cell(row, 3).Value = rec.QuantityAvailable;
+            row++;
+        }
+
+        ws.SheetView.FreezeRows(1);
+        ws.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        wb.SaveAs(stream);
+        return File(stream.ToArray(),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "Inventory-Update-Template.xlsx");
+    }
+
+    public async Task<IActionResult> OnPostAsync(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            Errors.Add("Please choose an Excel file to import.");
+            return Page();
+        }
+
+        using var upload = new MemoryStream();
+        await file.CopyToAsync(upload);
+        upload.Position = 0;
+
+        XLWorkbook wb;
+        try
+        {
+            wb = new XLWorkbook(upload);
+        }
+        catch (Exception)
+        {
+            Errors.Add("Could not read that file. Please upload a valid .xlsx file (use the downloaded template).");
+            return Page();
+        }
+        using var _ = wb;
+
+        var ws = wb.Worksheet(1);
+        var colMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var cell in ws.Row(1).CellsUsed())
+        {
+            var header = cell.GetString().Trim().TrimEnd('*').Trim();
+            if (!string.IsNullOrEmpty(header)) colMap[header] = cell.Address.ColumnNumber;
+        }
+
+        var missingHeaders = RequiredHeaders.Where(h => !colMap.ContainsKey(h)).ToList();
+        if (missingHeaders.Count > 0)
+        {
+            Errors.Add($"The file is missing required column(s): {string.Join(", ", missingHeaders)}. Please use the downloaded template.");
+            return Page();
+        }
+
+        string Cell(int row, string header) =>
+            colMap.TryGetValue(header, out var col) ? ws.Cell(row, col).GetString().Trim() : "";
+
+        // Pass 1: read every row into memory without touching the database, so we can batch-fetch
+        // products by SKU instead of round-tripping per row (the catalog can run into the tens of thousands).
+        var rows = new List<(int Row, string Sku, decimal Quantity)>();
+        var lastRow = ws.LastRowUsed()?.RowNumber() ?? 1;
+        for (int row = 2; row <= lastRow; row++)
+        {
+            var sku = Cell(row, "SKU");
+            var quantityRaw = Cell(row, "Quantity");
+
+            if (string.IsNullOrWhiteSpace(sku) && string.IsNullOrWhiteSpace(quantityRaw))
+                continue; // fully blank row
+
+            if (string.IsNullOrWhiteSpace(sku)) { Errors.Add($"Row {row}: SKU is required."); continue; }
+            if (string.IsNullOrWhiteSpace(quantityRaw)) { Errors.Add($"Row {row}: Quantity is required."); continue; }
+
+            if (!decimal.TryParse(quantityRaw, NumberStyles.Number, CultureInfo.InvariantCulture, out var quantity) || quantity < 0)
+            {
+                Errors.Add($"Row {row}: Quantity '{quantityRaw}' is not a valid non-negative number.");
+                continue;
+            }
+
+            rows.Add((row, sku.Trim().ToUpperInvariant(), quantity));
+        }
+
+        if (rows.Count == 0)
+        {
+            if (Errors.Count == 0) Errors.Add("No inventory rows found in the uploaded file.");
+            return Page();
+        }
+
+        var skus = rows.Select(r => r.Sku).Distinct().ToList();
+        var productsBySku = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
+        foreach (var batch in skus.Chunk(SkuBatchSize))
+        {
+            var found = await _db.Products
+                .Include(p => p.InventoryRecords)
+                .Where(p => p.ProductCode != null && batch.Contains(p.ProductCode))
+                .ToListAsync();
+            foreach (var p in found) productsBySku[p.ProductCode!] = p;
+        }
+
+        var adjustedBy = User.FindFirstValue(ClaimTypes.Name) ?? "Admin";
+
+        foreach (var (row, sku, quantity) in rows)
+        {
+            if (!productsBySku.TryGetValue(sku, out var product))
+            {
+                Errors.Add($"Row {row}: SKU '{sku}' was not found.");
+                continue;
+            }
+
+            var record = product.InventoryRecords.FirstOrDefault();
+            if (record == null)
+            {
+                Errors.Add($"Row {row}: SKU '{sku}' has no inventory record to update.");
+                continue;
+            }
+
+            if (record.QuantityAvailable == quantity)
+            {
+                UnchangedCount++;
+                continue;
+            }
+
+            var previous = record.QuantityAvailable;
+            record.QuantityAvailable = quantity;
+            record.LastSyncedAt      = DateTime.UtcNow;
+            record.SyncSource        = "Import";
+            record.UpdatedAt         = DateTime.UtcNow;
+
+            _db.InventoryAdjustmentLogs.Add(new InventoryAdjustmentLog
+            {
+                ProductId        = product.Id,
+                AdjustmentType   = "Set",
+                Quantity         = quantity,
+                PreviousQuantity = previous,
+                NewQuantity      = quantity,
+                Reason           = "Bulk update via Excel import",
+                AdjustedBy       = adjustedBy,
+                AdjustedAt       = DateTime.UtcNow
+            });
+
+            UpdatedCount++;
+        }
+
+        if (UpdatedCount > 0)
+            await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"{UpdatedCount} SKU(s) updated, {UnchangedCount} already matched and were left unchanged.";
+        return Page();
+    }
+}
