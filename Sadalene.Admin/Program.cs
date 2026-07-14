@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using Sadalene.Admin.Services;
 using Sadalene.Core.Entities.Auth;
 using Sadalene.Core.Enums;
 using Sadalene.Infrastructure.Data;
+using Sadalene.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

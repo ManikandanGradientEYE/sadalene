@@ -51,10 +51,14 @@ public class CreateModel : PageModel
             if (string.IsNullOrWhiteSpace(customerRows[i].Phone))
                 ModelState.AddModelError($"Input.Customers[{i}].Phone", $"Row {i + 1}: customer phone is required.");
         }
+        // Phone must be globally unique across Agents/Walk-in-Customers/Users — those are the identities
+        // that log into the mobile app directly. An agent's own customers are exempt (ignored here).
         if (await _db.Agents.AnyAsync(x => x.Phone == Input.Phone))
             ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
         else if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone))
             ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
+        else if (await _db.Users.AnyAsync(x => x.Phone == Input.Phone))
+            ModelState.AddModelError(string.Empty, "A staff user with this phone number already exists.");
 
         if (!string.IsNullOrWhiteSpace(Input.Email))
         {

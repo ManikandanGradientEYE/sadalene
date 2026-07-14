@@ -3,7 +3,7 @@ using Sadalene.Core.Entities.Orders;
 using Sadalene.Core.Entities.Products;
 using Sadalene.Infrastructure.Data;
 
-namespace Sadalene.Admin.Services;
+namespace Sadalene.Infrastructure.Services;
 
 /// <summary>
 /// Keeps InventoryRecord in sync with order lifecycle: stock is deducted when an order is placed

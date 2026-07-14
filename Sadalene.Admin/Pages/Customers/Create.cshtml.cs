@@ -43,15 +43,26 @@ public class CreateModel : PageModel
 
         var agentId = Input.AgentId is null or 0 ? null : Input.AgentId;
 
-        if (await _db.Customers.AnyAsync(x => x.AgentId == agentId && x.Phone == Input.Phone))
+        // Phone must be globally unique across Agents/Walk-in-Customers/Users — those are the identities
+        // that log into the mobile app directly. An agent's own customers are exempt: they never log
+        // in themselves (the agent orders on their behalf), so their numbers don't need to be unique.
+        if (agentId == null)
         {
-            ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
-            return Page();
-        }
-        if (await _db.Agents.AnyAsync(x => x.Phone == Input.Phone))
-        {
-            ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
-            return Page();
+            if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone))
+            {
+                ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
+                return Page();
+            }
+            if (await _db.Agents.AnyAsync(x => x.Phone == Input.Phone))
+            {
+                ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
+                return Page();
+            }
+            if (await _db.Users.AnyAsync(x => x.Phone == Input.Phone))
+            {
+                ModelState.AddModelError(string.Empty, "A staff user with this phone number already exists.");
+                return Page();
+            }
         }
         if (!string.IsNullOrWhiteSpace(Input.Email))
         {

@@ -43,7 +43,9 @@ public class EditModel : PageModel
         var c = await _db.Customers.FindAsync(Input.Id);
         if (c == null) return NotFound();
 
-        // Uniqueness only applies to walk-in customers (no agent) — matches the DB's filtered unique index.
+        // Phone must be globally unique across Agents/Walk-in-Customers/Users — those are the identities
+        // that log into the mobile app directly. An agent's own customers are exempt: they never log
+        // in themselves (the agent orders on their behalf), so their numbers don't need to be unique.
         if (c.AgentId == null)
         {
             if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone && x.Id != Input.Id))
@@ -56,18 +58,25 @@ public class EditModel : PageModel
                 ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
                 return Page();
             }
-            if (!string.IsNullOrWhiteSpace(Input.Email))
+            if (await _db.Users.AnyAsync(x => x.Phone == Input.Phone))
             {
-                if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email && x.Id != Input.Id))
-                {
-                    ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
-                    return Page();
-                }
-                if (await _db.Agents.AnyAsync(x => x.Email == Input.Email))
-                {
-                    ModelState.AddModelError(string.Empty, "An agent with this email already exists.");
-                    return Page();
-                }
+                ModelState.AddModelError(string.Empty, "A staff user with this phone number already exists.");
+                return Page();
+            }
+        }
+
+        // Email uniqueness still only applies to walk-in customers (no agent) — matches the DB's filtered unique index.
+        if (c.AgentId == null && !string.IsNullOrWhiteSpace(Input.Email))
+        {
+            if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Email == Input.Email && x.Id != Input.Id))
+            {
+                ModelState.AddModelError(string.Empty, "A customer with this email already exists.");
+                return Page();
+            }
+            if (await _db.Agents.AnyAsync(x => x.Email == Input.Email))
+            {
+                ModelState.AddModelError(string.Empty, "An agent with this email already exists.");
+                return Page();
             }
         }
 

@@ -56,6 +56,8 @@ public class EditModel : PageModel
         ModelState.ClearValidationState(nameof(NewCustomer));
         if (!ModelState.IsValid) return await ReloadAsync(Input.Id);
 
+        // Phone must be globally unique across Agents/Walk-in-Customers/Users — those are the identities
+        // that log into the mobile app directly. An agent's own customers are exempt (ignored here).
         if (await _db.Agents.AnyAsync(x => x.Phone == Input.Phone && x.Id != Input.Id))
         {
             ModelState.AddModelError(string.Empty, "An agent with this phone number already exists.");
@@ -64,6 +66,11 @@ public class EditModel : PageModel
         if (await _db.Customers.AnyAsync(x => x.AgentId == null && x.Phone == Input.Phone))
         {
             ModelState.AddModelError(string.Empty, "A customer with this phone number already exists.");
+            return await ReloadAsync(Input.Id);
+        }
+        if (await _db.Users.AnyAsync(x => x.Phone == Input.Phone))
+        {
+            ModelState.AddModelError(string.Empty, "A staff user with this phone number already exists.");
             return await ReloadAsync(Input.Id);
         }
         if (!string.IsNullOrWhiteSpace(Input.Email))

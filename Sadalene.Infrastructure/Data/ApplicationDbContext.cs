@@ -38,6 +38,8 @@ public class ApplicationDbContext : DbContext
     // Orders
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
 
     // Documents
     public DbSet<Invoice> Invoices => Set<Invoice>();

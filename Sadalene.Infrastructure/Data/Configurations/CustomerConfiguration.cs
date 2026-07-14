@@ -19,7 +19,8 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(x => x.State).HasMaxLength(100);
         builder.Property(x => x.GstNumber).HasMaxLength(20);
 
-        // Only walk-in customers (no agent) need unique contact/email; an agent's own customers are exempt.
+        // Only walk-in customers (no agent) need unique contact/email — an agent's own customers are
+        // exempt, since they never log in themselves (the agent orders on their behalf).
         builder.HasIndex(x => x.Phone).IsUnique().HasFilter("[AgentId] IS NULL");
         builder.HasIndex(x => x.Email).IsUnique().HasFilter("[AgentId] IS NULL AND [Email] IS NOT NULL");
 
