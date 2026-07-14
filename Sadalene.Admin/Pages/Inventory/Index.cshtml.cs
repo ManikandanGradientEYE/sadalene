@@ -25,7 +25,6 @@ public class IndexModel : PageModel
     public int? SubCategoryId { get; set; }
     public SelectList Divisions { get; set; } = null!;
 
-    public List<InventoryAdjustmentLog> AdjustmentLogs { get; set; } = [];
     public List<InventorySyncLog> SyncLogs { get; set; } = [];
     public InventorySyncLog? LastSync { get; set; }
 
@@ -63,12 +62,6 @@ public class IndexModel : PageModel
             return Partial("_InventoryTable", this);
 
         Divisions = new SelectList(await _db.Divisions.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync(), "Id", "Name");
-
-        AdjustmentLogs = await _db.InventoryAdjustmentLogs
-            .Include(a => a.Product)
-            .OrderByDescending(a => a.AdjustedAt)
-            .Take(30)
-            .ToListAsync();
 
         SyncLogs = await _db.InventorySyncLogs
             .OrderByDescending(s => s.SyncStartedAt)

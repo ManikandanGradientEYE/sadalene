@@ -14,8 +14,12 @@
            asp-route-subCategoryId="@Model.SubCategoryId" class="btn btn-outline-secondary btn-sm me-2">
             <i class="bi bi-download me-1"></i>Download Stock
         </a>
-        <a asp-page="Update" class="btn btn-outline-secondary btn-sm">
+        <a asp-page="Update" class="btn btn-outline-secondary btn-sm me-2">
             <i class="bi bi-upload me-1"></i>Update Inventory
+        </a>
+        <a asp-page="AdjustmentHistory" asp-route-divisionId="@Model.DivisionId" asp-route-categoryId="@Model.CategoryId"
+           asp-route-subCategoryId="@Model.SubCategoryId" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-clock-history me-1"></i>Adjustment History
         </a>
     </div>
 </div>
@@ -63,42 +67,6 @@
 </div>
 <div id="inventory-table-region">
     <partial name="_InventoryTable" model="Model" />
-</div>
-
-<!-- Adjustment Log -->
-<div class="card mb-4">
-    <div class="card-header fw-semibold py-2"><i class="bi bi-clock-history me-2"></i>Adjustment History <span class="text-muted small fw-normal">(last 30)</span></div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0 small">
-            <thead class="table-light">
-                <tr><th>Date / Time</th><th>Product</th><th>Type</th><th class="text-end">Qty</th><th class="text-end">Before</th><th class="text-end">After</th><th>Reason</th><th>By</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var log in Model.AdjustmentLogs)
-                {
-                    var (icon, cls) = log.AdjustmentType switch {
-                        "Add"      => ("bi-plus-circle-fill", "text-success"),
-                        "Subtract" => ("bi-dash-circle-fill", "text-danger"),
-                        _          => ("bi-pencil-fill",      "text-primary")
-                    };
-                    <tr>
-                        <td class="text-muted">@log.AdjustedAt.ToString("dd MMM yy HH:mm")</td>
-                        <td class="fw-semibold">@log.Product.Name</td>
-                        <td><span class="@cls"><i class="bi @icon me-1"></i>@log.AdjustmentType</span></td>
-                        <td class="text-end">@log.Quantity.ToString("N2")</td>
-                        <td class="text-end text-muted">@log.PreviousQuantity.ToString("N2")</td>
-                        <td class="text-end fw-semibold">@log.NewQuantity.ToString("N2")</td>
-                        <td class="text-muted">@log.Reason</td>
-                        <td class="text-muted">@log.AdjustedBy</td>
-                    </tr>
-                }
-                @if (!Model.AdjustmentLogs.Any())
-                {
-                    <tr><td colspan="8" class="text-center text-muted py-3">No adjustments recorded yet.</td></tr>
-                }
-            </tbody>
-        </table>
-    </div>
 </div>
 
 <!-- Sync History -->
