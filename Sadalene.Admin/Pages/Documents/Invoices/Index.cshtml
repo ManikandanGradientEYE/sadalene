@@ -35,15 +35,15 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Customer</label>
-                    <select name="customerId" class="form-select" required>
+                    <select id="uploadCustomerSelect" name="customerId" class="form-select" required>
+                        <option value="">— Select Customer —</option>
                         @foreach (var c in Model.Customers) { <option value="@c.Id">@c.FullName (@c.Phone)</option> }
                     </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Linked Order (optional)</label>
-                    <select name="orderId" class="form-select">
-                        <option value="">— None —</option>
-                        @foreach (var o in Model.Orders) { <option value="@o.Id">@o.OrderNumber — @o.Customer.FullName</option> }
+                    <select id="uploadOrderSelect" name="orderId" class="form-select">
+                        <option value="">— Select Customer first —</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -66,3 +66,40 @@
         </form>
     </div></div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const uploadModal = document.getElementById('uploadModal');
+            const uploadCustomerSelect = document.getElementById('uploadCustomerSelect');
+            const uploadOrderSelect = document.getElementById('uploadOrderSelect');
+            let wired = false;
+
+            // Selects inside a modal are only Tom-Select-enhanced once the modal is first shown
+            // (select-enhance.js), so wiring the cascade here — and re-enhancing defensively —
+            // avoids depending on listener registration order between the two scripts.
+            uploadModal.addEventListener('shown.bs.modal', function () {
+                window.SadaleneSelects.enhance(uploadCustomerSelect);
+                window.SadaleneSelects.enhance(uploadOrderSelect);
+
+                if (wired) return;
+                wired = true;
+
+                uploadCustomerSelect.tomselect.on('change', async function (customerId) {
+                    uploadOrderSelect.tomselect.clear(true);
+                    uploadOrderSelect.tomselect.clearOptions();
+                    uploadOrderSelect.tomselect.addOption({ value: '', text: customerId ? 'Loading...' : '— Select Customer first —' });
+                    uploadOrderSelect.tomselect.refreshOptions(false);
+
+                    if (!customerId) return;
+
+                    const data = await fetch(`/api/master/invoice-orders-for-customer?customerId=${customerId}`).then(r => r.json());
+                    uploadOrderSelect.tomselect.clearOptions();
+                    uploadOrderSelect.tomselect.addOption({ value: '', text: data.length ? '— None —' : 'No unlinked orders for this customer' });
+                    data.forEach(o => uploadOrderSelect.tomselect.addOption({ value: String(o.id), text: o.orderNumber }));
+                    uploadOrderSelect.tomselect.refreshOptions(false);
+                });
+            });
+        })();
+    </script>
+}

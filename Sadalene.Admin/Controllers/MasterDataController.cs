@@ -46,11 +46,22 @@ public class MasterDataController : ControllerBase
         return Ok(items);
     }
 
-    [HttpGet("orders-for-customer")]
-    public async Task<IActionResult> GetOrdersForCustomer(int customerId)
+    [HttpGet("challan-orders-for-customer")]
+    public async Task<IActionResult> GetChallanOrdersForCustomer(int customerId)
     {
         var items = await _db.Orders
             .Where(o => o.CustomerId == customerId && !_db.Challans.Any(c => c.OrderId == o.Id))
+            .OrderByDescending(o => o.OrderDate)
+            .Select(o => new { o.Id, o.OrderNumber })
+            .ToListAsync();
+        return Ok(items);
+    }
+
+    [HttpGet("invoice-orders-for-customer")]
+    public async Task<IActionResult> GetInvoiceOrdersForCustomer(int customerId)
+    {
+        var items = await _db.Orders
+            .Where(o => o.CustomerId == customerId && !_db.Invoices.Any(i => i.OrderId == o.Id))
             .OrderByDescending(o => o.OrderDate)
             .Select(o => new { o.Id, o.OrderNumber })
             .ToListAsync();

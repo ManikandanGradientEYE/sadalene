@@ -88,7 +88,7 @@
 
                     if (!customerId) return;
 
-                    const data = await fetch(`/api/master/orders-for-customer?customerId=${customerId}`).then(r => r.json());
+                    const data = await fetch(`/api/master/challan-orders-for-customer?customerId=${customerId}`).then(r => r.json());
                     uploadOrderSelect.tomselect.clearOptions();
                     uploadOrderSelect.tomselect.addOption({ value: '', text: data.length ? '— None —' : 'No unlinked orders for this customer' });
                     data.forEach(o => uploadOrderSelect.tomselect.addOption({ value: String(o.id), text: o.orderNumber }));
