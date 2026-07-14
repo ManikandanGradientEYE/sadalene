@@ -3,9 +3,9 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Sadalene.Admin.Services;
 using Sadalene.Core.Entities.Auth;
 using Sadalene.Core.Entities.Orders;
-using Sadalene.Core.Entities.Products;
 using Sadalene.Core.Enums;
 using Sadalene.Infrastructure.Data;
 
@@ -14,7 +14,8 @@ namespace Sadalene.Admin.Pages.Orders;
 public class CreateModel : PageModel
 {
     private readonly ApplicationDbContext _db;
-    public CreateModel(ApplicationDbContext db) => _db = db;
+    private readonly OrderInventoryService _inventory;
+    public CreateModel(ApplicationDbContext db, OrderInventoryService inventory) { _db = db; _inventory = inventory; }
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -70,18 +71,21 @@ public class CreateModel : PageModel
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id);
 
-        foreach (var item in Input.Items)
+        // Group by product before validating: two scans of the same SKU produce two line items,
+        // and each must be checked against the combined amount, not independently against the same stock.
+        foreach (var group in Input.Items.GroupBy(i => i.ProductId))
         {
-            if (!products.TryGetValue(item.ProductId, out var product))
+            if (!products.TryGetValue(group.Key, out var product))
             {
                 ModelState.AddModelError(string.Empty, "One of the scanned products could not be found.");
                 continue;
             }
 
+            var totalEffective = group.Sum(i => i.EffectiveQuantity);
             var stock = product.InventoryRecords.Sum(i => i.QuantityAvailable);
-            if (item.EffectiveQuantity > stock)
+            if (totalEffective > stock)
                 ModelState.AddModelError(string.Empty,
-                    $"Requested quantity for {product.Name} ({item.Quantity:N2} × {item.UnitType} = {item.EffectiveQuantity:N2}) exceeds available stock ({stock:N2}).");
+                    $"Requested quantity for {product.Name} ({totalEffective:N2}) exceeds available stock ({stock:N2}).");
         }
 
         if (!ModelState.IsValid) return Page();
@@ -123,6 +127,7 @@ public class CreateModel : PageModel
             order.Items.Add(new OrderItem
             {
                 ProductId           = item.ProductId,
+                Product             = product!,
                 Quantity            = item.Quantity,
                 UnitType            = item.UnitType,
                 UnitOfMeasure       = !string.IsNullOrWhiteSpace(item.UnitOfMeasure) ? item.UnitOfMeasure! : (product?.UomMaster?.Name ?? "Units"),
@@ -132,6 +137,10 @@ public class CreateModel : PageModel
         }
 
         _db.Orders.Add(order);
+
+        var adjustedBy = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+        _inventory.DeductForOrder(order, adjustedBy);
+
         await _db.SaveChangesAsync();
 
         TempData["Success"] = $"Order {orderNumber} created.";
