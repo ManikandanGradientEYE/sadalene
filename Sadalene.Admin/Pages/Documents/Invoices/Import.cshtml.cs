@@ -201,6 +201,11 @@ public class ImportModel : PageModel
                     Errors.Add($"Row {row}: Order '{orderNumber}' not found.");
                     continue;
                 }
+                if (order.CustomerId != customer.Id)
+                {
+                    Errors.Add($"Row {row}: Order '{orderNumber}' does not belong to customer '{customerRef}'.");
+                    continue;
+                }
                 orderId = order.Id;
             }
 
