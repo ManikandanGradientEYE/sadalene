@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Sadalene.Core.Entities.Inventory;
-using Sadalene.Core.Entities.Products;
 using Sadalene.Infrastructure.Data;
 
 namespace Sadalene.Admin.Pages.Inventory;
@@ -13,7 +12,10 @@ namespace Sadalene.Admin.Pages.Inventory;
 [RequestSizeLimit(20_000_000)]
 public class UpdateModel : PageModel
 {
-    private const int SkuBatchSize = 500;
+    // Rows are processed and committed in chunks rather than one giant SaveChanges — bounds memory
+    // (change tracker doesn't grow across the whole file) and blast radius (a failure only loses the
+    // current chunk, not the entire import), which matters once files run into the tens of thousands of rows.
+    private const int BatchSize = 2000;
 
     private readonly ApplicationDbContext _db;
     public UpdateModel(ApplicationDbContext db) => _db = db;
@@ -143,63 +145,78 @@ public class UpdateModel : PageModel
             return Page();
         }
 
-        var skus = rows.Select(r => r.Sku).Distinct().ToList();
-        var productsBySku = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
-        foreach (var batch in skus.Chunk(SkuBatchSize))
-        {
-            var found = await _db.Products
-                .Include(p => p.InventoryRecords)
-                .Where(p => p.ProductCode != null && batch.Contains(p.ProductCode))
-                .ToListAsync();
-            foreach (var p in found) productsBySku[p.ProductCode!] = p;
-        }
-
         var adjustedBy = User.FindFirstValue(ClaimTypes.Name) ?? "Admin";
 
-        foreach (var (row, sku, quantity) in rows)
+        foreach (var batch in rows.Chunk(BatchSize))
         {
-            if (!productsBySku.TryGetValue(sku, out var product))
+            var skus = batch.Select(r => r.Sku).Distinct().ToList();
+            var productsBySku = await _db.Products
+                .Include(p => p.InventoryRecords)
+                .Where(p => p.ProductCode != null && skus.Contains(p.ProductCode))
+                .ToDictionaryAsync(p => p.ProductCode!, StringComparer.OrdinalIgnoreCase);
+
+            var batchUpdated = 0;
+
+            foreach (var (row, sku, quantity) in batch)
             {
-                Errors.Add($"Row {row}: SKU '{sku}' was not found.");
-                continue;
+                if (!productsBySku.TryGetValue(sku, out var product))
+                {
+                    Errors.Add($"Row {row}: SKU '{sku}' was not found.");
+                    continue;
+                }
+
+                var record = product.InventoryRecords.FirstOrDefault();
+                if (record == null)
+                {
+                    Errors.Add($"Row {row}: SKU '{sku}' has no inventory record to update.");
+                    continue;
+                }
+
+                if (record.QuantityAvailable == quantity)
+                {
+                    UnchangedCount++;
+                    continue;
+                }
+
+                var previous = record.QuantityAvailable;
+                record.QuantityAvailable = quantity;
+                record.LastSyncedAt      = DateTime.UtcNow;
+                record.SyncSource        = "Import";
+                record.UpdatedAt         = DateTime.UtcNow;
+
+                _db.InventoryAdjustmentLogs.Add(new InventoryAdjustmentLog
+                {
+                    ProductId        = product.Id,
+                    AdjustmentType   = "Set",
+                    Quantity         = quantity,
+                    PreviousQuantity = previous,
+                    NewQuantity      = quantity,
+                    Reason           = "Bulk update via Excel import",
+                    AdjustedBy       = adjustedBy,
+                    AdjustedAt       = DateTime.UtcNow
+                });
+
+                batchUpdated++;
             }
 
-            var record = product.InventoryRecords.FirstOrDefault();
-            if (record == null)
+            if (batchUpdated > 0)
             {
-                Errors.Add($"Row {row}: SKU '{sku}' has no inventory record to update.");
-                continue;
+                try
+                {
+                    await _db.SaveChangesAsync();
+                    UpdatedCount += batchUpdated;
+                }
+                catch (DbUpdateException ex)
+                {
+                    Errors.Add($"Rows {batch[0].Row}–{batch[^1].Row}: this batch of {batchUpdated} change(s) failed to save and was not applied. " +
+                        $"Details: {ex.InnerException?.Message ?? ex.Message}");
+                }
             }
 
-            if (record.QuantityAvailable == quantity)
-            {
-                UnchangedCount++;
-                continue;
-            }
-
-            var previous = record.QuantityAvailable;
-            record.QuantityAvailable = quantity;
-            record.LastSyncedAt      = DateTime.UtcNow;
-            record.SyncSource        = "Import";
-            record.UpdatedAt         = DateTime.UtcNow;
-
-            _db.InventoryAdjustmentLogs.Add(new InventoryAdjustmentLog
-            {
-                ProductId        = product.Id,
-                AdjustmentType   = "Set",
-                Quantity         = quantity,
-                PreviousQuantity = previous,
-                NewQuantity      = quantity,
-                Reason           = "Bulk update via Excel import",
-                AdjustedBy       = adjustedBy,
-                AdjustedAt       = DateTime.UtcNow
-            });
-
-            UpdatedCount++;
+            // Detach everything from this chunk before the next one — keeps the change tracker
+            // (and its DetectChanges cost) from growing across the whole file.
+            _db.ChangeTracker.Clear();
         }
-
-        if (UpdatedCount > 0)
-            await _db.SaveChangesAsync();
 
         TempData["Success"] = $"{UpdatedCount} SKU(s) updated, {UnchangedCount} already matched and were left unchanged.";
         return Page();
