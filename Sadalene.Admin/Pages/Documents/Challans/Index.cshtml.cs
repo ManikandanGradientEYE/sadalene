@@ -49,6 +49,13 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostUploadAsync(string challanNumber, int customerId, int? orderId,
         DateTime challanDate, IFormFile file)
     {
+        var number = challanNumber?.Trim() ?? string.Empty;
+        if (await _db.Challans.AnyAsync(c => c.ChallanNumber == number))
+        {
+            TempData["Error"] = $"Challan number '{number}' already exists.";
+            return RedirectToPage();
+        }
+
         if (file?.Length > 0)
         {
             var folder = Path.Combine(_env.WebRootPath, "uploads", "challans");
@@ -59,7 +66,7 @@ public class IndexModel : PageModel
 
             _db.Challans.Add(new Challan
             {
-                ChallanNumber = challanNumber, CustomerId = customerId, OrderId = orderId,
+                ChallanNumber = number, CustomerId = customerId, OrderId = orderId,
                 ChallanDate = challanDate, FileUrl = $"/uploads/challans/{fileName}"
             });
             await _db.SaveChangesAsync();
