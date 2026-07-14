@@ -14,6 +14,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.OrderNumber).HasMaxLength(30).IsRequired();
         builder.Property(x => x.Notes).HasMaxLength(500);
         builder.Property(x => x.Status).IsRequired();
+        builder.Ignore(x => x.GrandTotal);
 
         builder.HasIndex(x => x.OrderNumber).IsUnique();
 

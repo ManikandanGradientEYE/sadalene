@@ -42,8 +42,10 @@ public class CreateModel : PageModel
         public bool AddedByBarcodeScan { get; set; }
         public string? ScannedBarcodeValue { get; set; }
         public OrderItemUnitType UnitType { get; set; } = OrderItemUnitType.Full;
+        public decimal UnitPrice { get; set; }
 
         public decimal EffectiveQuantity => UnitType == OrderItemUnitType.Half ? Quantity * 0.5m : Quantity;
+        public decimal LineTotal => UnitPrice * EffectiveQuantity;
     }
 
     public async Task OnGetAsync()
@@ -130,6 +132,7 @@ public class CreateModel : PageModel
                 Product             = product!,
                 Quantity            = item.Quantity,
                 UnitType            = item.UnitType,
+                UnitPrice           = item.UnitPrice,
                 UnitOfMeasure       = !string.IsNullOrWhiteSpace(item.UnitOfMeasure) ? item.UnitOfMeasure! : (product?.UomMaster?.Name ?? "Units"),
                 AddedByBarcodeScan  = item.AddedByBarcodeScan,
                 ScannedBarcodeValue = item.AddedByBarcodeScan ? item.ScannedBarcodeValue : null
@@ -143,7 +146,7 @@ public class CreateModel : PageModel
 
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = $"Order {orderNumber} created.";
+        TempData["Success"] = $"Order {orderNumber} created. Total: ₹{order.GrandTotal:N2}";
         return RedirectToPage("Details", new { id = order.Id });
     }
 

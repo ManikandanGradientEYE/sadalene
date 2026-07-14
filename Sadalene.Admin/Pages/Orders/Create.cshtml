@@ -74,11 +74,27 @@
 
             <table class="table table-sm align-middle mb-0">
                 <thead>
-                    <tr><th>Product</th><th style="width:100px">Quantity</th><th style="width:150px">Type</th><th style="width:90px">UOM</th><th style="width:140px">Stock</th><th style="width:40px"></th></tr>
+                    <tr>
+                        <th>Product</th>
+                        <th style="width:90px">Quantity</th>
+                        <th style="width:150px">Type</th>
+                        <th style="width:100px">Rate</th>
+                        <th style="width:110px">Amount</th>
+                        <th style="width:80px">UOM</th>
+                        <th style="width:120px">Stock</th>
+                        <th style="width:40px"></th>
+                    </tr>
                 </thead>
                 <tbody id="itemsBody"></tbody>
             </table>
             <div id="noItemsMessage" class="text-muted small text-center py-3">No items scanned yet.</div>
+
+            <div class="d-flex justify-content-end border-top pt-2 mt-2">
+                <div class="text-end">
+                    <span class="text-muted small me-2">Grand Total:</span>
+                    <span class="fw-bold fs-5" id="grandTotalDisplay">₹0.00</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -114,6 +130,8 @@
             <span class="text-muted unit-type-dash">—</span>
             <div class="text-muted small eff-qty-cell"></div>
         </td>
+        <td><input type="number" class="form-control form-control-sm rate-input" step="0.01" min="0" /></td>
+        <td class="text-muted small amount-cell">0.00</td>
         <td class="text-muted small uom-cell">—</td>
         <td class="text-muted small stock-cell"></td>
         <td><button type="button" class="btn btn-sm btn-outline-danger remove-item-btn"><i class="bi bi-trash"></i></button></td>
@@ -178,6 +196,8 @@
         // increments that row's quantity instead of adding a duplicate row.
         const rowsByProductId = new Map();
 
+        const grandTotalDisplay = document.getElementById('grandTotalDisplay');
+
         function refreshEmptyState() {
             noItemsMessage.classList.toggle('d-none', itemsBody.querySelectorAll('.item-row').length > 0);
         }
@@ -186,19 +206,30 @@
             return !rowRefs.unitTypeToggle.classList.contains('d-none') && rowRefs.halfRadio.checked ? 0.5 : 1;
         }
 
-        function updateRowMaxAndHint(rowRefs) {
-            const { qtyInput, effQtyCell, uomHidden } = rowRefs;
+        function updateGrandTotal() {
+            let total = 0;
+            itemsBody.querySelectorAll('.amount-cell').forEach(function (cell) {
+                total += parseFloat(cell.dataset.amount || '0');
+            });
+            grandTotalDisplay.textContent = `₹${total.toFixed(2)}`;
+        }
+
+        function updateRowCalculations(rowRefs) {
+            const { qtyInput, effQtyCell, uomHidden, rateInput, amountCell } = rowRefs;
             const stock = parseFloat(rowRefs.tr.dataset.stock || '0');
             const mult = currentMultiplier(rowRefs);
+            const qty = parseFloat(qtyInput.value) || 0;
+            const effQty = qty * mult;
 
             qtyInput.max = mult > 0 ? stock / mult : stock;
+            effQtyCell.textContent = rowRefs.unitTypeToggle.classList.contains('d-none') ? '' : `= ${effQty.toFixed(2)} ${uomHidden.value}`;
 
-            if (rowRefs.unitTypeToggle.classList.contains('d-none')) {
-                effQtyCell.textContent = '';
-                return;
-            }
-            const qty = parseFloat(qtyInput.value) || 0;
-            effQtyCell.textContent = `= ${(qty * mult).toFixed(2)} ${uomHidden.value}`;
+            const rate = parseFloat(rateInput.value) || 0;
+            const amount = effQty * rate;
+            amountCell.textContent = amount.toFixed(2);
+            amountCell.dataset.amount = amount;
+
+            updateGrandTotal();
         }
 
         function addItemRow(info, sku) {
@@ -233,6 +264,11 @@
             tr.querySelector('.unit-full-label').setAttribute('for', fullRadio.id);
             tr.querySelector('.unit-half-label').setAttribute('for', halfRadio.id);
 
+            const rateInput = tr.querySelector('.rate-input');
+            rateInput.name = `Input.Items[${idx}].UnitPrice`;
+            rateInput.value = (info.rate || 0).toFixed(2);
+            const amountCell = tr.querySelector('.amount-cell');
+
             const uomHidden = document.createElement('input');
             uomHidden.type = 'hidden';
             uomHidden.name = `Input.Items[${idx}].UnitOfMeasure`;
@@ -261,29 +297,31 @@
             tr.querySelector('.stock-cell').textContent = `Stock: ${info.stock}`;
             tr.dataset.stock = info.stock;
 
-            const rowRefs = { tr, qtyInput, unitTypeToggle, unitTypeDash, fullRadio, halfRadio, effQtyCell, uomHidden };
+            const rowRefs = { tr, qtyInput, unitTypeToggle, unitTypeDash, fullRadio, halfRadio, effQtyCell, uomHidden, rateInput, amountCell };
 
             unitTypeToggle.classList.toggle('d-none', !info.allowsHalfUnit);
             unitTypeDash.classList.toggle('d-none', info.allowsHalfUnit);
 
             fullRadio.addEventListener('change', function () {
                 unitTypeHidden.value = 'Full';
-                updateRowMaxAndHint(rowRefs);
+                updateRowCalculations(rowRefs);
             });
             halfRadio.addEventListener('change', function () {
                 unitTypeHidden.value = 'Half';
-                updateRowMaxAndHint(rowRefs);
+                updateRowCalculations(rowRefs);
             });
-            qtyInput.addEventListener('input', function () { updateRowMaxAndHint(rowRefs); });
+            qtyInput.addEventListener('input', function () { updateRowCalculations(rowRefs); });
+            rateInput.addEventListener('input', function () { updateRowCalculations(rowRefs); });
 
             tr.querySelector('.remove-item-btn').addEventListener('click', function () {
                 for (const [pid, row] of rowsByProductId) if (row === tr) rowsByProductId.delete(pid);
                 tr.remove();
                 refreshEmptyState();
+                updateGrandTotal();
             });
 
             itemsBody.appendChild(tr);
-            updateRowMaxAndHint(rowRefs);
+            updateRowCalculations(rowRefs);
             rowsByProductId.set(String(info.id), tr);
             refreshEmptyState();
 

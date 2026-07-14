@@ -27,4 +27,6 @@ public class Order : BaseEntity
     public string? Notes { get; set; }
 
     public ICollection<OrderItem> Items { get; set; } = [];
+
+    public decimal GrandTotal => Items.Sum(i => i.LineTotal);
 }

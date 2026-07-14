@@ -23,6 +23,12 @@ public class OrderItem : BaseEntity
     // this is the Lump-equivalent amount (e.g. 1.0) used for stock validation and display.
     public decimal EffectiveQuantity => UnitType == OrderItemUnitType.Half ? Quantity * 0.5m : Quantity;
 
+    // Snapshotted from Product.Rate at the time the item was added — kept independent of the
+    // product's current rate so past orders don't change value if pricing is updated later.
+    public decimal UnitPrice { get; set; }
+
+    public decimal LineTotal => UnitPrice * EffectiveQuantity;
+
     // True when item was added via barcode scan (vs. catalog browse)
     public bool AddedByBarcodeScan { get; set; } = false;
     public string? ScannedBarcodeValue { get; set; }

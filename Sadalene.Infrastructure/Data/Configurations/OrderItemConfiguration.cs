@@ -15,6 +15,8 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.UnitOfMeasure).HasMaxLength(50).IsRequired();
         builder.Property(x => x.ScannedBarcodeValue).HasMaxLength(200);
         builder.Property(x => x.UnitType).IsRequired();
+        builder.Property(x => x.UnitPrice).HasColumnType("decimal(12,2)").IsRequired();
         builder.Ignore(x => x.EffectiveQuantity);
+        builder.Ignore(x => x.LineTotal);
     }
 }

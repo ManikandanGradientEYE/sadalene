@@ -4,7 +4,7 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead class="table-light">
-                <tr><th>Order #</th><th>Customer</th><th>Agent</th><th>Date</th><th>Items</th><th>Status</th><th></th></tr>
+                <tr><th>Order #</th><th>Customer</th><th>Agent</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var o in Model.Orders.Items)
@@ -15,6 +15,7 @@
                         <td class="text-muted small">@(o.Agent?.FullName ?? (o.PlacedByUser != null ? $"Staff: {o.PlacedByUser.FullName}" : "Self"))</td>
                         <td class="text-muted small">@o.OrderDate.ToString("dd MMM yyyy HH:mm")</td>
                         <td>@o.Items.Count</td>
+                        <td class="fw-semibold">₹@o.GrandTotal.ToString("N2")</td>
                         <td>
                             <span class="badge @(o.Status == Sadalene.Core.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
                                                  o.Status == Sadalene.Core.Enums.OrderStatus.Confirmed ? "bg-success" :
@@ -28,7 +29,7 @@
                 }
                 @if (Model.Orders.Items.Count == 0)
                 {
-                    <tr><td colspan="7" class="text-center text-muted py-3">No orders found.</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-3">No orders found.</td></tr>
                 }
             </tbody>
         </table>
