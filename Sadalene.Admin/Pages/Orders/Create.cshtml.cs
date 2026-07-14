@@ -39,6 +39,8 @@ public class CreateModel : PageModel
         public decimal Quantity { get; set; }
 
         public string? UnitOfMeasure { get; set; }
+        public bool AddedByBarcodeScan { get; set; }
+        public string? ScannedBarcodeValue { get; set; }
     }
 
     public async Task OnGetAsync()
@@ -56,6 +58,17 @@ public class CreateModel : PageModel
 
         if (Input.CustomerId == 0)
             ModelState.AddModelError(string.Empty, "Please select a customer.");
+
+        foreach (var item in Input.Items)
+        {
+            var product = Products.FirstOrDefault(p => p.Id == item.ProductId);
+            if (product == null) continue;
+
+            var stock = product.InventoryRecords.Sum(i => i.QuantityAvailable);
+            if (item.Quantity > stock)
+                ModelState.AddModelError(string.Empty,
+                    $"Requested quantity for {product.Name} ({item.Quantity:N2}) exceeds available stock ({stock:N2}).");
+        }
 
         if (!ModelState.IsValid) return Page();
 
@@ -95,9 +108,11 @@ public class CreateModel : PageModel
             var product = Products.FirstOrDefault(p => p.Id == item.ProductId);
             order.Items.Add(new OrderItem
             {
-                ProductId     = item.ProductId,
-                Quantity      = item.Quantity,
-                UnitOfMeasure = !string.IsNullOrWhiteSpace(item.UnitOfMeasure) ? item.UnitOfMeasure! : (product?.UomMaster?.Name ?? "Units")
+                ProductId           = item.ProductId,
+                Quantity            = item.Quantity,
+                UnitOfMeasure       = !string.IsNullOrWhiteSpace(item.UnitOfMeasure) ? item.UnitOfMeasure! : (product?.UomMaster?.Name ?? "Units"),
+                AddedByBarcodeScan  = item.AddedByBarcodeScan,
+                ScannedBarcodeValue = item.AddedByBarcodeScan ? item.ScannedBarcodeValue : null
             });
         }
 
@@ -122,6 +137,7 @@ public class CreateModel : PageModel
 
         Products = await _db.Products
             .Include(p => p.UomMaster)
+            .Include(p => p.InventoryRecords)
             .Where(p => p.IsActive)
             .OrderBy(p => p.Name)
             .ToListAsync();

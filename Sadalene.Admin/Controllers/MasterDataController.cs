@@ -60,4 +60,22 @@ public class MasterDataController : ControllerBase
 
         return Ok(new { uom = product.UomMaster?.Name ?? "Units", stock });
     }
+
+    [HttpGet("product-by-sku")]
+    public async Task<IActionResult> GetProductBySku(string sku)
+    {
+        if (string.IsNullOrWhiteSpace(sku)) return NotFound();
+        var term = sku.Trim();
+
+        var product = await _db.Products
+            .Include(p => p.UomMaster)
+            .FirstOrDefaultAsync(p => p.IsActive && p.ProductCode == term);
+        if (product == null) return NotFound();
+
+        var stock = await _db.InventoryRecords
+            .Where(i => i.ProductId == product.Id)
+            .SumAsync(i => (decimal?)i.QuantityAvailable) ?? 0;
+
+        return Ok(new { id = product.Id, name = product.Name, code = product.ProductCode, uom = product.UomMaster?.Name ?? "Units", stock });
+    }
 }

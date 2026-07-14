@@ -62,6 +62,16 @@
     <div class="card mb-3">
         <div class="card-header fw-semibold py-2 bg-light"><i class="bi bi-basket me-2"></i>Order Items</div>
         <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Scan Barcode / QR Code</label>
+                <div class="input-group" style="max-width:420px">
+                    <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                    <input type="text" id="scanInput" class="form-control" placeholder="Scan or type SKU, then press Enter" autocomplete="off" />
+                </div>
+                <div id="scanFeedback" class="small mt-1"></div>
+                <div class="form-text">Works with a USB/Bluetooth barcode or QR scanner (types like a keyboard), or type the SKU by hand and press Enter. Only adds a product if it's found in stock.</div>
+            </div>
+
             <table class="table table-sm align-middle mb-2">
                 <thead>
                     <tr><th>Product</th><th style="width:110px">Quantity</th><th style="width:100px">UOM</th><th style="width:140px">Stock</th><th style="width:40px"></th></tr>
@@ -157,6 +167,32 @@
         const itemsBody = document.getElementById('itemsBody');
         const template = document.getElementById('itemRowTemplate');
 
+        // Tracks which row currently holds a given productId, so scanning the same SKU twice
+        // increments that row's quantity instead of adding a duplicate row.
+        const rowsByProductId = new Map();
+
+        async function applyProductInfo(rowRefs, productId) {
+            const { tr, uomCell, stockCell, uomHidden, qtyInput } = rowRefs;
+
+            for (const [pid, row] of rowsByProductId) if (row === tr) rowsByProductId.delete(pid);
+
+            if (!productId) {
+                uomCell.textContent = '—';
+                stockCell.textContent = '';
+                uomHidden.value = '';
+                qtyInput.removeAttribute('max');
+                return null;
+            }
+
+            const info = await fetch(`/api/master/product-info?productId=${productId}`).then(r => r.json());
+            uomCell.textContent = info.uom;
+            stockCell.textContent = `Stock: ${info.stock}`;
+            uomHidden.value = info.uom;
+            qtyInput.max = info.stock;
+            rowsByProductId.set(String(productId), tr);
+            return info;
+        }
+
         function addItemRow() {
             const idx = itemIndex++;
             const fragment = template.content.cloneNode(true);
@@ -168,32 +204,111 @@
             const qtyInput = tr.querySelector('.qty-input');
             qtyInput.name = `Input.Items[${idx}].Quantity`;
 
-            const hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.name = `Input.Items[${idx}].UnitOfMeasure`;
-            tr.appendChild(hidden);
+            const uomCell = tr.querySelector('.uom-cell');
+            const stockCell = tr.querySelector('.stock-cell');
+
+            const uomHidden = document.createElement('input');
+            uomHidden.type = 'hidden';
+            uomHidden.name = `Input.Items[${idx}].UnitOfMeasure`;
+            tr.appendChild(uomHidden);
+
+            const scanFlagHidden = document.createElement('input');
+            scanFlagHidden.type = 'hidden';
+            scanFlagHidden.name = `Input.Items[${idx}].AddedByBarcodeScan`;
+            scanFlagHidden.value = 'false';
+            tr.appendChild(scanFlagHidden);
+
+            const scanValueHidden = document.createElement('input');
+            scanValueHidden.type = 'hidden';
+            scanValueHidden.name = `Input.Items[${idx}].ScannedBarcodeValue`;
+            tr.appendChild(scanValueHidden);
 
             itemsBody.appendChild(tr);
             window.SadaleneSelects.enhance(select);
 
-            select.tomselect.on('change', async function (productId) {
-                const uomCell = tr.querySelector('.uom-cell');
-                const stockCell = tr.querySelector('.stock-cell');
-                if (!productId) { uomCell.textContent = '—'; stockCell.textContent = ''; hidden.value = ''; return; }
+            const rowRefs = { tr, uomCell, stockCell, uomHidden, qtyInput };
 
-                const info = await fetch(`/api/master/product-info?productId=${productId}`).then(r => r.json());
-                uomCell.textContent = info.uom;
-                stockCell.textContent = `Stock: ${info.stock}`;
-                hidden.value = info.uom;
+            select.tomselect.on('change', function (productId) {
+                applyProductInfo(rowRefs, productId);
             });
 
             tr.querySelector('.remove-item-btn').addEventListener('click', function () {
-                if (itemsBody.querySelectorAll('.item-row').length > 1) tr.remove();
+                if (itemsBody.querySelectorAll('.item-row').length > 1) {
+                    for (const [pid, row] of rowsByProductId) if (row === tr) rowsByProductId.delete(pid);
+                    tr.remove();
+                }
             });
+
+            return {
+                tr, select, qtyInput, scanFlagHidden, scanValueHidden,
+                applyProductInfo: (productId) => applyProductInfo(rowRefs, productId)
+            };
         }
 
-        document.getElementById('addItemBtn').addEventListener('click', addItemRow);
+        document.getElementById('addItemBtn').addEventListener('click', () => addItemRow());
         addItemRow();
+
+        // --- Scan Barcode / QR Code ---
+        const scanInput = document.getElementById('scanInput');
+        const scanFeedback = document.getElementById('scanFeedback');
+
+        function showScanFeedback(message, isError) {
+            scanFeedback.textContent = message;
+            scanFeedback.className = 'small mt-1 ' + (isError ? 'text-danger' : 'text-success');
+        }
+
+        scanInput.addEventListener('keydown', async function (e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+
+            const sku = scanInput.value.trim();
+            if (!sku) return;
+
+            const response = await fetch(`/api/master/product-by-sku?sku=${encodeURIComponent(sku)}`);
+            if (response.status === 404) {
+                showScanFeedback(`No product found for SKU "${sku}".`, true);
+                scanInput.select();
+                return;
+            }
+            if (!response.ok) {
+                showScanFeedback('Something went wrong looking up that SKU.', true);
+                return;
+            }
+            const info = await response.json();
+
+            if (info.stock <= 0) {
+                showScanFeedback(`${info.name} (${info.code}) is out of stock.`, true);
+                scanInput.select();
+                return;
+            }
+
+            const existingRow = rowsByProductId.get(String(info.id));
+            if (existingRow) {
+                const qtyInput = existingRow.querySelector('.qty-input');
+                const newQty = (parseFloat(qtyInput.value) || 0) + 1;
+                if (newQty > info.stock) {
+                    showScanFeedback(`Only ${info.stock} ${info.uom} of ${info.name} available.`, true);
+                } else {
+                    qtyInput.value = newQty;
+                    existingRow.querySelector('input[name$=".AddedByBarcodeScan"]').value = 'true';
+                    existingRow.querySelector('input[name$=".ScannedBarcodeValue"]').value = sku;
+                    showScanFeedback(`+1 ${info.name} (now ${newQty} ${info.uom}).`, false);
+                }
+            } else {
+                const row = addItemRow();
+                row.select.tomselect.setValue(String(info.id), true);
+                await row.applyProductInfo(String(info.id));
+                row.qtyInput.value = 1;
+                row.scanFlagHidden.value = 'true';
+                row.scanValueHidden.value = sku;
+                showScanFeedback(`Added ${info.name} (${info.code}).`, false);
+            }
+
+            scanInput.value = '';
+            scanInput.focus();
+        });
+
+        scanInput.focus();
     });
 </script>
 }
