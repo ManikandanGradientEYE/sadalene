@@ -19,8 +19,14 @@
         <p class="text-muted small mb-3">
             <i class="bi bi-info-circle me-1"></i><strong>Customer</strong> is matched against an existing customer's phone
             number or full name — customers are not created automatically, so make sure they already exist first.
-            <strong>OrderNumber</strong> is optional but must match an existing order if given. Imported challans have
-            no attached file — use the "Upload Challan" option instead for a one-off entry with a scanned document.
+            <strong>OrderNumber</strong> is optional but must match an existing order if given.
+        </p>
+        <p class="text-muted small mb-3">
+            <i class="bi bi-file-earmark-zip me-1"></i>To attach scanned challan documents in bulk, set
+            <strong>FileName</strong> in each row to the exact file name (e.g. <code>CH-0001.pdf</code>), put all those
+            files into a single .zip (no folders needed), and upload the .zip alongside the Excel file. Rows without a
+            FileName are imported without an attached document — use "Upload Challan" from the list page to attach one
+            later.
         </p>
         <a asp-page-handler="Template" class="btn btn-outline-secondary btn-sm mb-4">
             <i class="bi bi-download me-1"></i>Download Excel Template
@@ -30,6 +36,10 @@
             <div class="mb-3">
                 <label class="form-label fw-semibold">Excel File</label>
                 <input type="file" name="file" class="form-control" accept=".xlsx" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Challan Documents (.zip, optional)</label>
+                <input type="file" name="zipFile" class="form-control" accept=".zip" />
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Import</button>
         </form>

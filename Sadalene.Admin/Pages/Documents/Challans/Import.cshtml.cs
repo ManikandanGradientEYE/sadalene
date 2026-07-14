@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -7,11 +8,12 @@ using Sadalene.Infrastructure.Data;
 
 namespace Sadalene.Admin.Pages.Documents.Challans;
 
-[RequestSizeLimit(20_000_000)]
+[RequestSizeLimit(100_000_000)]
 public class ImportModel : PageModel
 {
     private readonly ApplicationDbContext _db;
-    public ImportModel(ApplicationDbContext db) => _db = db;
+    private readonly IWebHostEnvironment _env;
+    public ImportModel(ApplicationDbContext db, IWebHostEnvironment env) { _db = db; _env = env; }
 
     public List<string> Errors { get; set; } = [];
     public int ImportedCount { get; set; }
@@ -19,7 +21,7 @@ public class ImportModel : PageModel
     private static readonly string[] RequiredHeaders = ["ChallanNumber", "Customer", "ChallanDate"];
     private static readonly (string Header, bool Required)[] TemplateColumns =
     [
-        ("ChallanNumber", true), ("Customer", true), ("OrderNumber", false), ("ChallanDate", true)
+        ("ChallanNumber", true), ("Customer", true), ("OrderNumber", false), ("ChallanDate", true), ("FileName", false)
     ];
 
     public void OnGet() { }
@@ -42,6 +44,7 @@ public class ImportModel : PageModel
         ws.Cell(2, 3).Value = "ORD-2026-000001";
         ws.Cell(2, 4).Value = DateTime.Today;
         ws.Cell(2, 4).Style.DateFormat.Format = "dd-MM-yyyy";
+        ws.Cell(2, 5).Value = "CH-0001.pdf";
         ws.SheetView.FreezeRows(1);
         ws.Columns().AdjustToContents();
 
@@ -71,12 +74,36 @@ public class ImportModel : PageModel
             "Challan-Import-Template.xlsx");
     }
 
-    public async Task<IActionResult> OnPostAsync(IFormFile? file)
+    public async Task<IActionResult> OnPostAsync(IFormFile? file, IFormFile? zipFile)
     {
         if (file == null || file.Length == 0)
         {
             Errors.Add("Please choose an Excel file to import.");
             return Page();
+        }
+
+        Dictionary<string, byte[]>? zipEntries = null;
+        if (zipFile is { Length: > 0 })
+        {
+            zipEntries = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                using var zipStream = zipFile.OpenReadStream();
+                using var archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
+                foreach (var entry in archive.Entries)
+                {
+                    if (string.IsNullOrEmpty(entry.Name)) continue; // directory entry
+                    using var entryStream = entry.Open();
+                    using var ms = new MemoryStream();
+                    await entryStream.CopyToAsync(ms);
+                    zipEntries[entry.Name] = ms.ToArray();
+                }
+            }
+            catch (InvalidDataException)
+            {
+                Errors.Add("Could not read the uploaded ZIP file. Please make sure it's a valid .zip.");
+                return Page();
+            }
         }
 
         using var upload = new MemoryStream();
@@ -170,13 +197,35 @@ public class ImportModel : PageModel
                 continue;
             }
 
+            var fileName = NullIfEmpty(Cell(row, "FileName"));
+            string? fileUrl = null;
+            if (fileName != null)
+            {
+                if (zipEntries == null)
+                {
+                    Errors.Add($"Row {row}: FileName '{fileName}' was specified but no ZIP file was uploaded.");
+                    continue;
+                }
+                if (!zipEntries.TryGetValue(fileName, out var bytes))
+                {
+                    Errors.Add($"Row {row}: File '{fileName}' was not found in the uploaded ZIP.");
+                    continue;
+                }
+
+                var folder = Path.Combine(_env.WebRootPath, "uploads", "challans");
+                Directory.CreateDirectory(folder);
+                var savedName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
+                await System.IO.File.WriteAllBytesAsync(Path.Combine(folder, savedName), bytes);
+                fileUrl = $"/uploads/challans/{savedName}";
+            }
+
             pending.Add(new Challan
             {
                 ChallanNumber = challanNumber,
                 CustomerId    = customer.Id,
                 OrderId       = orderId,
                 ChallanDate   = challanDate.Value,
-                FileUrl       = null
+                FileUrl       = fileUrl
             });
         }
 
