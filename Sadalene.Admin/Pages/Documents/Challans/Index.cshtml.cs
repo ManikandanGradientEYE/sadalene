@@ -20,7 +20,6 @@ public class IndexModel : PageModel
 
     public PagedResult<Challan> Challans { get; set; } = new();
     public List<Customer> Customers { get; set; } = [];
-    public List<Order> Orders { get; set; } = [];
     public string? Search { get; set; }
 
     public async Task<IActionResult> OnGetAsync(string? search, int pageNumber = 1)
@@ -43,7 +42,6 @@ public class IndexModel : PageModel
             return Partial("_ChallansTable", this);
 
         Customers = await _db.Customers.Where(c => c.IsActive).OrderBy(c => c.FullName).ToListAsync();
-        Orders    = await _db.Orders.Include(o => o.Customer).OrderByDescending(o => o.OrderDate).Take(100).ToListAsync();
 
         return Page();
     }
