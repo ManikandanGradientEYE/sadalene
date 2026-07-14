@@ -45,8 +45,8 @@
         <input data-search-input type="text" class="form-control" style="min-width:260px"
                placeholder="Search by product name or SKU..." value="@Model.Search" />
     </div>
-    <div class="col-auto">
-        <select id="filterDivision" class="form-select" style="min-width:280px">
+    <div class="col-auto" style="min-width:280px">
+        <select id="filterDivision" class="form-select">
             <option value="">All Divisions</option>
             @foreach (SelectListItem item in Model.Divisions)
             {
@@ -54,13 +54,13 @@
             }
         </select>
     </div>
-    <div class="col-auto">
-        <select id="filterCategory" class="form-select" style="min-width:280px">
+    <div class="col-auto" style="min-width:280px">
+        <select id="filterCategory" class="form-select">
             <option value="">All Categories</option>
         </select>
     </div>
-    <div class="col-auto">
-        <select id="filterSubCategory" class="form-select" style="min-width:280px">
+    <div class="col-auto" style="min-width:280px">
+        <select id="filterSubCategory" class="form-select">
             <option value="">All Sub-Categories</option>
         </select>
     </div>
