@@ -58,7 +58,7 @@ public class MasterDataController : ControllerBase
             .Where(i => i.ProductId == productId)
             .SumAsync(i => (decimal?)i.QuantityAvailable) ?? 0;
 
-        return Ok(new { uom = product.UomMaster?.Name ?? "Units", stock });
+        return Ok(new { uom = product.UomMaster?.Name ?? "Units", stock, allowsHalfUnit = product.UomMaster?.AllowsHalfUnit ?? false });
     }
 
     [HttpGet("product-by-sku")]
@@ -76,6 +76,14 @@ public class MasterDataController : ControllerBase
             .Where(i => i.ProductId == product.Id)
             .SumAsync(i => (decimal?)i.QuantityAvailable) ?? 0;
 
-        return Ok(new { id = product.Id, name = product.Name, code = product.ProductCode, uom = product.UomMaster?.Name ?? "Units", stock });
+        return Ok(new
+        {
+            id = product.Id,
+            name = product.Name,
+            code = product.ProductCode,
+            uom = product.UomMaster?.Name ?? "Units",
+            stock,
+            allowsHalfUnit = product.UomMaster?.AllowsHalfUnit ?? false
+        });
     }
 }

@@ -74,7 +74,7 @@
 
             <table class="table table-sm align-middle mb-2">
                 <thead>
-                    <tr><th>Product</th><th style="width:110px">Quantity</th><th style="width:100px">UOM</th><th style="width:140px">Stock</th><th style="width:40px"></th></tr>
+                    <tr><th>Product</th><th style="width:100px">Quantity</th><th style="width:150px">Type</th><th style="width:90px">UOM</th><th style="width:140px">Stock</th><th style="width:40px"></th></tr>
                 </thead>
                 <tbody id="itemsBody"></tbody>
             </table>
@@ -109,6 +109,15 @@
             </select>
         </td>
         <td><input type="number" class="form-control form-control-sm qty-input" step="0.001" min="0.001" required /></td>
+        <td class="unit-type-cell d-none">
+            <div class="btn-group btn-group-sm w-100" role="group">
+                <input type="radio" class="btn-check unit-full-radio" autocomplete="off" checked>
+                <label class="btn btn-outline-secondary">Full</label>
+                <input type="radio" class="btn-check unit-half-radio" autocomplete="off">
+                <label class="btn btn-outline-secondary">Half</label>
+            </div>
+            <div class="text-muted small eff-qty-cell"></div>
+        </td>
         <td class="text-muted small uom-cell">—</td>
         <td class="text-muted small stock-cell"></td>
         <td><button type="button" class="btn btn-sm btn-outline-danger remove-item-btn"><i class="bi bi-trash"></i></button></td>
@@ -171,8 +180,27 @@
         // increments that row's quantity instead of adding a duplicate row.
         const rowsByProductId = new Map();
 
+        function currentMultiplier(rowRefs) {
+            return !rowRefs.unitTypeCell.classList.contains('d-none') && rowRefs.halfRadio.checked ? 0.5 : 1;
+        }
+
+        function updateRowMaxAndHint(rowRefs) {
+            const { qtyInput, effQtyCell, uomHidden } = rowRefs;
+            const stock = parseFloat(rowRefs.tr.dataset.stock || '0');
+            const mult = currentMultiplier(rowRefs);
+
+            qtyInput.max = mult > 0 ? stock / mult : stock;
+
+            if (rowRefs.unitTypeCell.classList.contains('d-none')) {
+                effQtyCell.textContent = '';
+                return;
+            }
+            const qty = parseFloat(qtyInput.value) || 0;
+            effQtyCell.textContent = `= ${(qty * mult).toFixed(2)} ${uomHidden.value}`;
+        }
+
         async function applyProductInfo(rowRefs, productId) {
-            const { tr, uomCell, stockCell, uomHidden, qtyInput } = rowRefs;
+            const { tr, uomCell, stockCell, uomHidden, qtyInput, unitTypeCell, fullRadio, halfRadio, unitTypeHidden } = rowRefs;
 
             for (const [pid, row] of rowsByProductId) if (row === tr) rowsByProductId.delete(pid);
 
@@ -181,6 +209,10 @@
                 stockCell.textContent = '';
                 uomHidden.value = '';
                 qtyInput.removeAttribute('max');
+                unitTypeCell.classList.add('d-none');
+                fullRadio.checked = true;
+                unitTypeHidden.value = 'Full';
+                rowRefs.effQtyCell.textContent = '';
                 return null;
             }
 
@@ -188,7 +220,15 @@
             uomCell.textContent = info.uom;
             stockCell.textContent = `Stock: ${info.stock}`;
             uomHidden.value = info.uom;
-            qtyInput.max = info.stock;
+            tr.dataset.stock = info.stock;
+
+            unitTypeCell.classList.toggle('d-none', !info.allowsHalfUnit);
+            if (!info.allowsHalfUnit) {
+                fullRadio.checked = true;
+                unitTypeHidden.value = 'Full';
+            }
+
+            updateRowMaxAndHint(rowRefs);
             rowsByProductId.set(String(productId), tr);
             return info;
         }
@@ -206,11 +246,23 @@
 
             const uomCell = tr.querySelector('.uom-cell');
             const stockCell = tr.querySelector('.stock-cell');
+            const unitTypeCell = tr.querySelector('.unit-type-cell');
+            const fullRadio = tr.querySelector('.unit-full-radio');
+            const halfRadio = tr.querySelector('.unit-half-radio');
+            const effQtyCell = tr.querySelector('.eff-qty-cell');
+            fullRadio.name = `unitType-${idx}`;
+            halfRadio.name = `unitType-${idx}`;
 
             const uomHidden = document.createElement('input');
             uomHidden.type = 'hidden';
             uomHidden.name = `Input.Items[${idx}].UnitOfMeasure`;
             tr.appendChild(uomHidden);
+
+            const unitTypeHidden = document.createElement('input');
+            unitTypeHidden.type = 'hidden';
+            unitTypeHidden.name = `Input.Items[${idx}].UnitType`;
+            unitTypeHidden.value = 'Full';
+            tr.appendChild(unitTypeHidden);
 
             const scanFlagHidden = document.createElement('input');
             scanFlagHidden.type = 'hidden';
@@ -226,11 +278,24 @@
             itemsBody.appendChild(tr);
             window.SadaleneSelects.enhance(select);
 
-            const rowRefs = { tr, uomCell, stockCell, uomHidden, qtyInput };
+            const rowRefs = {
+                tr, uomCell, stockCell, uomHidden, qtyInput,
+                unitTypeCell, fullRadio, halfRadio, effQtyCell, unitTypeHidden
+            };
 
             select.tomselect.on('change', function (productId) {
                 applyProductInfo(rowRefs, productId);
             });
+
+            fullRadio.addEventListener('change', function () {
+                unitTypeHidden.value = 'Full';
+                updateRowMaxAndHint(rowRefs);
+            });
+            halfRadio.addEventListener('change', function () {
+                unitTypeHidden.value = 'Half';
+                updateRowMaxAndHint(rowRefs);
+            });
+            qtyInput.addEventListener('input', function () { updateRowMaxAndHint(rowRefs); });
 
             tr.querySelector('.remove-item-btn').addEventListener('click', function () {
                 if (itemsBody.querySelectorAll('.item-row').length > 1) {
@@ -285,11 +350,16 @@
             const existingRow = rowsByProductId.get(String(info.id));
             if (existingRow) {
                 const qtyInput = existingRow.querySelector('.qty-input');
+                const halfRadio = existingRow.querySelector('.unit-half-radio');
+                const unitTypeCell = existingRow.querySelector('.unit-type-cell');
+                const mult = (!unitTypeCell.classList.contains('d-none') && halfRadio.checked) ? 0.5 : 1;
                 const newQty = (parseFloat(qtyInput.value) || 0) + 1;
-                if (newQty > info.stock) {
+
+                if (newQty * mult > info.stock) {
                     showScanFeedback(`Only ${info.stock} ${info.uom} of ${info.name} available.`, true);
                 } else {
                     qtyInput.value = newQty;
+                    qtyInput.dispatchEvent(new Event('input'));
                     existingRow.querySelector('input[name$=".AddedByBarcodeScan"]').value = 'true';
                     existingRow.querySelector('input[name$=".ScannedBarcodeValue"]').value = sku;
                     showScanFeedback(`+1 ${info.name} (now ${newQty} ${info.uom}).`, false);

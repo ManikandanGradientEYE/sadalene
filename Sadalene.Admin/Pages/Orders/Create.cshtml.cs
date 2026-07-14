@@ -41,6 +41,9 @@ public class CreateModel : PageModel
         public string? UnitOfMeasure { get; set; }
         public bool AddedByBarcodeScan { get; set; }
         public string? ScannedBarcodeValue { get; set; }
+        public OrderItemUnitType UnitType { get; set; } = OrderItemUnitType.Full;
+
+        public decimal EffectiveQuantity => UnitType == OrderItemUnitType.Half ? Quantity * 0.5m : Quantity;
     }
 
     public async Task OnGetAsync()
@@ -65,9 +68,9 @@ public class CreateModel : PageModel
             if (product == null) continue;
 
             var stock = product.InventoryRecords.Sum(i => i.QuantityAvailable);
-            if (item.Quantity > stock)
+            if (item.EffectiveQuantity > stock)
                 ModelState.AddModelError(string.Empty,
-                    $"Requested quantity for {product.Name} ({item.Quantity:N2}) exceeds available stock ({stock:N2}).");
+                    $"Requested quantity for {product.Name} ({item.Quantity:N2} × {item.UnitType} = {item.EffectiveQuantity:N2}) exceeds available stock ({stock:N2}).");
         }
 
         if (!ModelState.IsValid) return Page();
@@ -110,6 +113,7 @@ public class CreateModel : PageModel
             {
                 ProductId           = item.ProductId,
                 Quantity            = item.Quantity,
+                UnitType            = item.UnitType,
                 UnitOfMeasure       = !string.IsNullOrWhiteSpace(item.UnitOfMeasure) ? item.UnitOfMeasure! : (product?.UomMaster?.Name ?? "Units"),
                 AddedByBarcodeScan  = item.AddedByBarcodeScan,
                 ScannedBarcodeValue = item.AddedByBarcodeScan ? item.ScannedBarcodeValue : null

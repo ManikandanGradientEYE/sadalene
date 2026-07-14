@@ -40,7 +40,7 @@ public class IndexModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAddAsync(string name, string? abbreviation, string? description)
+    public async Task<IActionResult> OnPostAddAsync(string name, string? abbreviation, string? description, bool allowsHalfUnit)
     {
         name = name.Trim();
 
@@ -49,13 +49,13 @@ public class IndexModel : PageModel
             TempData["Error"] = $"UOM '{name}' already exists.";
             return RedirectToPage();
         }
-        _db.UomMasters.Add(new UomMaster { Name = name, Abbreviation = abbreviation, Description = description });
+        _db.UomMasters.Add(new UomMaster { Name = name, Abbreviation = abbreviation, Description = description, AllowsHalfUnit = allowsHalfUnit });
         await _db.SaveChangesAsync();
         TempData["Success"] = $"UOM '{name}' added.";
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostEditAsync(int id, string name, string? abbreviation, string? description)
+    public async Task<IActionResult> OnPostEditAsync(int id, string name, string? abbreviation, string? description, bool allowsHalfUnit)
     {
         name = name.Trim();
 
@@ -68,10 +68,11 @@ public class IndexModel : PageModel
         var u = await _db.UomMasters.FindAsync(id);
         if (u != null)
         {
-            u.Name         = name;
-            u.Abbreviation = abbreviation;
-            u.Description  = description;
-            u.UpdatedAt    = DateTime.UtcNow;
+            u.Name           = name;
+            u.Abbreviation   = abbreviation;
+            u.Description    = description;
+            u.AllowsHalfUnit = allowsHalfUnit;
+            u.UpdatedAt      = DateTime.UtcNow;
             await _db.SaveChangesAsync();
         }
         TempData["Success"] = "UOM updated.";

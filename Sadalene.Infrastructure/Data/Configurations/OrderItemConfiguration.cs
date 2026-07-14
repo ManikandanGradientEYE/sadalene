@@ -14,5 +14,7 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.Quantity).HasColumnType("decimal(18,3)").IsRequired();
         builder.Property(x => x.UnitOfMeasure).HasMaxLength(50).IsRequired();
         builder.Property(x => x.ScannedBarcodeValue).HasMaxLength(200);
+        builder.Property(x => x.UnitType).IsRequired();
+        builder.Ignore(x => x.EffectiveQuantity);
     }
 }

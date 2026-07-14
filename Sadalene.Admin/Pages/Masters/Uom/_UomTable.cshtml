@@ -5,7 +5,7 @@
         <table class="table table-hover mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Name</th><th>Abbreviation</th><th>Description</th><th>Status</th><th></th>
+                    <th>Name</th><th>Abbreviation</th><th>Description</th><th>Half Unit</th><th>Status</th><th></th>
                 </tr>
             </thead>
             <tbody>
@@ -20,6 +20,16 @@
                             }
                         </td>
                         <td class="text-muted small">@u.Description</td>
+                        <td>
+                            @if (u.AllowsHalfUnit)
+                            {
+                                <span class="badge bg-info-subtle text-info-emphasis">Allowed</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
                         <td>
                             <span class="badge @(u.IsActive ? "bg-success" : "bg-secondary")">
                                 @(u.IsActive ? "Active" : "Inactive")
@@ -60,6 +70,12 @@
                                         <label class="form-label fw-semibold">Description</label>
                                         <input name="Description" value="@u.Description" class="form-control" />
                                     </div>
+                                    <div class="form-check mb-2">
+                                        <input type="checkbox" name="allowsHalfUnit" value="true" class="form-check-input"
+                                               id="editAllowsHalfUnit-@u.Id" checked="@u.AllowsHalfUnit" />
+                                        <label class="form-check-label" for="editAllowsHalfUnit-@u.Id">Allows Half Unit</label>
+                                        <div class="form-text">Lets staff order half of this unit (e.g. Half Lump) when placing an order.</div>
+                                    </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
@@ -72,7 +88,7 @@
                 @if (Model.UomList.Items.Count == 0)
                 {
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
+                        <td colspan="6" class="text-center text-muted py-4">
                             No units of measure found.
                         </td>
                     </tr>
