@@ -1,0 +1,68 @@
+@page
+@model Sadalene.Admin.Pages.Documents.Invoices.ImportModel
+@{
+    ViewData["Title"] = "Import Invoices";
+    ViewData["ActiveMenu"] = "Invoices";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold">Import Invoices from Excel</h5>
+</div>
+
+<div class="card mb-4" style="max-width:700px">
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Download the template, fill in your invoices, then upload it below. Columns marked with
+            <span class="text-danger fw-semibold">*</span> are required.
+        </p>
+        <p class="text-muted small mb-3">
+            <i class="bi bi-info-circle me-1"></i><strong>Customer</strong> is matched against an existing customer's phone
+            number or full name — customers are not created automatically, so make sure they already exist first.
+            <strong>OrderNumber</strong> is optional but must match an existing order if given.
+        </p>
+        <p class="text-muted small mb-3">
+            <i class="bi bi-file-earmark-zip me-1"></i>Every invoice needs an attached document. Set
+            <strong>FileName</strong> in each row to the exact file name (e.g. <code>INV-0001.pdf</code>), put all those
+            files into a single .zip (no folders needed), and upload the .zip alongside the Excel file.
+        </p>
+        <a asp-page-handler="Template" class="btn btn-outline-secondary btn-sm mb-4">
+            <i class="bi bi-download me-1"></i>Download Excel Template
+        </a>
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Excel File</label>
+                <input type="file" name="file" class="form-control" accept=".xlsx" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Invoice Documents (.zip)</label>
+                <input type="file" name="zipFile" class="form-control" accept=".zip" required />
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Import</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.ImportedCount > 0 || Model.Errors.Count > 0)
+{
+    <div class="card" style="max-width:700px">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3">Import Result</h6>
+            @if (Model.ImportedCount > 0)
+            {
+                <p class="text-success mb-2"><i class="bi bi-check-circle me-1"></i>@Model.ImportedCount invoice(s) imported successfully.</p>
+            }
+            @if (Model.Errors.Count > 0)
+            {
+                <p class="text-danger fw-semibold mb-2">@Model.Errors.Count row(s) skipped:</p>
+                <ul class="text-danger small mb-0">
+                    @foreach (var e in Model.Errors)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}
