@@ -15,13 +15,13 @@
         <p class="text-muted small mb-3">
             Download the template, fill in your products, then upload it below. Columns marked with
             <span class="text-danger fw-semibold">*</span> are required. Division, Category, Sub Category,
-            Product Type, Packing Type and UOM are matched by name — if a name doesn't already exist it will
-            be created automatically, so you don't need to set those up first.
+            and Product Type must already exist — rows referencing a name that doesn't match an existing
+            record are rejected rather than created automatically. Check the template's "Reference" sheet
+            for the exact existing names to use.
         </p>
         <p class="text-muted small mb-3">
-            <i class="bi bi-info-circle me-1"></i><strong>DivisionCode</strong> is optional and only applies when a new Division is
-            being created by the import (existing Divisions keep their current code). It's used as the prefix for
-            auto-generated SKUs, e.g. <code>PNN00034</code>.
+            <i class="bi bi-info-circle me-1"></i><strong>Packing Type</strong> and <strong>UOM</strong> are optional —
+            leave them blank to skip, but if a value is given it must also match an existing record.
         </p>
         <a asp-page-handler="Template" class="btn btn-outline-secondary btn-sm mb-4">
             <i class="bi bi-download me-1"></i>Download Excel Template

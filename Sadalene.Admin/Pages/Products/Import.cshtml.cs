@@ -22,7 +22,7 @@ public class ImportModel : PageModel
     private static readonly string[] RequiredHeaders = ["Division", "Category", "SubCategory", "ProductType", "Name"];
     private static readonly (string Header, bool Required)[] TemplateColumns =
     [
-        ("Division", true), ("DivisionCode", false), ("Category", true), ("SubCategory", true), ("ProductType", true), ("Name", true),
+        ("Division", true), ("Category", true), ("SubCategory", true), ("ProductType", true), ("Name", true),
         ("ProductCode", false), ("MarketName", false), ("Description", false),
         ("UOM", false), ("PackingType", false),
         ("Rate", false), ("RatePer", false), ("Cut", false), ("QtyPerUnit", false), ("Grade", false),
@@ -132,7 +132,6 @@ public class ImportModel : PageModel
         var packingTypeCache = new Dictionary<string, PackingType>(StringComparer.OrdinalIgnoreCase);
         var uomCache = new Dictionary<string, UomMaster>(StringComparer.OrdinalIgnoreCase);
         var codesInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var divisionCodesInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pending = new List<(Product Product, decimal InitialStock)>();
 
         var lastRow = ws.LastRowUsed()?.RowNumber() ?? 1;
@@ -153,25 +152,33 @@ public class ImportModel : PageModel
             if (string.IsNullOrWhiteSpace(productTypeName)) { Errors.Add($"Row {row}: ProductType is required."); continue; }
             if (string.IsNullOrWhiteSpace(name)) { Errors.Add($"Row {row}: Name is required."); continue; }
 
-            var divisionCode = NullIfEmpty(Cell(row, "DivisionCode"))?.ToUpperInvariant();
-            if (divisionCode != null && divisionCode.Length > 20)
-            {
-                Errors.Add($"Row {row}: Division code '{divisionCode}' must be 20 characters or fewer.");
-                continue;
-            }
+            var division = await GetDivisionAsync(divisionName, divisionCache);
+            if (division == null) { Errors.Add($"Row {row}: Division '{divisionName}' does not exist. Create it first under Masters > Divisions."); continue; }
 
-            var (division, divisionError) = await GetOrCreateDivisionAsync(divisionName, divisionCode, divisionCache, divisionCodesInFile);
-            if (division == null) { Errors.Add($"Row {row}: {divisionError}"); continue; }
+            var category = await GetCategoryAsync(division, divisionName, categoryName, categoryCache);
+            if (category == null) { Errors.Add($"Row {row}: Category '{categoryName}' does not exist in division '{divisionName}'. Create it first under Masters > Categories."); continue; }
 
-            var category = await GetOrCreateCategoryAsync(division, divisionName, categoryName, categoryCache);
-            var subCategory = await GetOrCreateSubCategoryAsync(category, $"{divisionName}||{categoryName}", subCategoryName, subCategoryCache);
-            var productType = await GetOrCreateProductTypeAsync(productTypeName, productTypeCache);
+            var subCategory = await GetSubCategoryAsync(category, $"{divisionName}||{categoryName}", subCategoryName, subCategoryCache);
+            if (subCategory == null) { Errors.Add($"Row {row}: SubCategory '{subCategoryName}' does not exist in category '{categoryName}'. Create it first under Masters > Sub-Categories."); continue; }
+
+            var productType = await GetProductTypeAsync(productTypeName, productTypeCache);
+            if (productType == null) { Errors.Add($"Row {row}: ProductType '{productTypeName}' does not exist. Create it first under Masters > Product Types."); continue; }
 
             var packingTypeName = Cell(row, "PackingType");
-            var packingType = string.IsNullOrWhiteSpace(packingTypeName) ? null : await GetOrCreatePackingTypeAsync(packingTypeName, packingTypeCache);
+            PackingType? packingType = null;
+            if (!string.IsNullOrWhiteSpace(packingTypeName))
+            {
+                packingType = await GetPackingTypeAsync(packingTypeName, packingTypeCache);
+                if (packingType == null) { Errors.Add($"Row {row}: PackingType '{packingTypeName}' does not exist. Create it first under Masters > Packing Types."); continue; }
+            }
 
             var uomName = Cell(row, "UOM");
-            var uom = string.IsNullOrWhiteSpace(uomName) ? null : await GetOrCreateUomAsync(uomName, uomCache);
+            UomMaster? uom = null;
+            if (!string.IsNullOrWhiteSpace(uomName))
+            {
+                uom = await GetUomAsync(uomName, uomCache);
+                if (uom == null) { Errors.Add($"Row {row}: UOM '{uomName}' does not exist. Create it first under Masters > UOM."); continue; }
+            }
 
             string? productCode = NullIfEmpty(Cell(row, "ProductCode"));
             if (productCode != null)
@@ -275,82 +282,53 @@ public class ImportModel : PageModel
         return Page();
     }
 
-    private async Task<(Division? Division, string? Error)> GetOrCreateDivisionAsync(
-        string name, string? code, Dictionary<string, Division> cache, HashSet<string> codesInFile)
+    private async Task<Division?> GetDivisionAsync(string name, Dictionary<string, Division> cache)
     {
-        if (cache.TryGetValue(name, out var cached)) return (cached, null);
-
+        if (cache.TryGetValue(name, out var cached)) return cached;
         var existing = await _db.Divisions.FirstOrDefaultAsync(x => x.Name == name);
-        if (existing != null)
-        {
-            // Division already exists — keep its current code as-is; DivisionCode in the file only applies to new divisions.
-            cache[name] = existing;
-            return (existing, null);
-        }
-
-        // New division: DivisionCode (if given) must be unique against both the DB and other new divisions in this file.
-        if (code != null && (!codesInFile.Add(code) || await _db.Divisions.AnyAsync(d => d.Code == code)))
-            return (null, $"Division code '{code}' is already in use by another division.");
-
-        var division = new Division { Name = name, Code = code };
-        _db.Divisions.Add(division);
-        cache[name] = division;
-        return (division, null);
+        if (existing != null) cache[name] = existing;
+        return existing;
     }
 
-    private async Task<Category> GetOrCreateCategoryAsync(Division division, string divisionKey, string name, Dictionary<string, Category> cache)
+    private async Task<Category?> GetCategoryAsync(Division division, string divisionKey, string name, Dictionary<string, Category> cache)
     {
         var key = $"{divisionKey}||{name}";
         if (cache.TryGetValue(key, out var cached)) return cached;
-        var existing = division.Id != 0
-            ? await _db.Categories.FirstOrDefaultAsync(x => x.DivisionId == division.Id && x.Name == name)
-            : null;
-        var category = existing ?? new Category { Division = division, Name = name };
-        if (existing == null) _db.Categories.Add(category);
-        cache[key] = category;
-        return category;
+        var existing = await _db.Categories.FirstOrDefaultAsync(x => x.DivisionId == division.Id && x.Name == name);
+        if (existing != null) cache[key] = existing;
+        return existing;
     }
 
-    private async Task<SubCategory> GetOrCreateSubCategoryAsync(Category category, string categoryKey, string name, Dictionary<string, SubCategory> cache)
+    private async Task<SubCategory?> GetSubCategoryAsync(Category category, string categoryKey, string name, Dictionary<string, SubCategory> cache)
     {
         var key = $"{categoryKey}||{name}";
         if (cache.TryGetValue(key, out var cached)) return cached;
-        var existing = category.Id != 0
-            ? await _db.SubCategories.FirstOrDefaultAsync(x => x.CategoryId == category.Id && x.Name == name)
-            : null;
-        var subCategory = existing ?? new SubCategory { Category = category, Name = name };
-        if (existing == null) _db.SubCategories.Add(subCategory);
-        cache[key] = subCategory;
-        return subCategory;
+        var existing = await _db.SubCategories.FirstOrDefaultAsync(x => x.CategoryId == category.Id && x.Name == name);
+        if (existing != null) cache[key] = existing;
+        return existing;
     }
 
-    private async Task<ProductType> GetOrCreateProductTypeAsync(string name, Dictionary<string, ProductType> cache)
+    private async Task<ProductType?> GetProductTypeAsync(string name, Dictionary<string, ProductType> cache)
     {
         if (cache.TryGetValue(name, out var cached)) return cached;
         var existing = await _db.ProductTypes.FirstOrDefaultAsync(x => x.Name == name);
-        var productType = existing ?? new ProductType { Name = name };
-        if (existing == null) _db.ProductTypes.Add(productType);
-        cache[name] = productType;
-        return productType;
+        if (existing != null) cache[name] = existing;
+        return existing;
     }
 
-    private async Task<PackingType> GetOrCreatePackingTypeAsync(string name, Dictionary<string, PackingType> cache)
+    private async Task<PackingType?> GetPackingTypeAsync(string name, Dictionary<string, PackingType> cache)
     {
         if (cache.TryGetValue(name, out var cached)) return cached;
         var existing = await _db.PackingTypes.FirstOrDefaultAsync(x => x.Name == name);
-        var packingType = existing ?? new PackingType { Name = name };
-        if (existing == null) _db.PackingTypes.Add(packingType);
-        cache[name] = packingType;
-        return packingType;
+        if (existing != null) cache[name] = existing;
+        return existing;
     }
 
-    private async Task<UomMaster> GetOrCreateUomAsync(string name, Dictionary<string, UomMaster> cache)
+    private async Task<UomMaster?> GetUomAsync(string name, Dictionary<string, UomMaster> cache)
     {
         if (cache.TryGetValue(name, out var cached)) return cached;
         var existing = await _db.UomMasters.FirstOrDefaultAsync(x => x.Name == name);
-        var uom = existing ?? new UomMaster { Name = name };
-        if (existing == null) _db.UomMasters.Add(uom);
-        cache[name] = uom;
-        return uom;
+        if (existing != null) cache[name] = existing;
+        return existing;
     }
 }
