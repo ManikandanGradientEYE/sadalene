@@ -46,3 +46,29 @@ wwwroot/.cache/
 # Entity Framework migrations designer snapshots (keep .cs, ignore .Designer.cs if desired)
 # Uncomment below if you want to exclude migration designer files:
 # **/Migrations/*.Designer.cs
+
+# ---- Node / Expo / React Native (Sadalene.Mobile) ----
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+.env.local
+.env.*.local
+*.tsbuildinfo
+
+# React Native / native build dirs (managed workflow shouldn't generate these unless prebuilt/ejected — ignore defensively)
+ios/Pods/
+ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
