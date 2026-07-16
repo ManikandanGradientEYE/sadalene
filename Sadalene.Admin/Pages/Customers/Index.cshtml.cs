@@ -29,6 +29,7 @@ public class IndexModel : PageModel
             var term = search.Trim();
             query = query.Where(c =>
                 c.FullName.Contains(term) ||
+                (c.CustomerCode != null && c.CustomerCode.Contains(term)) ||
                 c.Phone.Contains(term) ||
                 (c.Email != null && c.Email.Contains(term)) ||
                 (c.City != null && c.City.Contains(term)));

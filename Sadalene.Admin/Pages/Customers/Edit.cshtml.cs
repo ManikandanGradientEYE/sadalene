@@ -18,6 +18,7 @@ public class EditModel : PageModel
     {
         public int Id { get; set; }
         [Required] public string FullName { get; set; } = string.Empty;
+        public string? CustomerCode { get; set; }
         [Required] public string Phone { get; set; } = string.Empty;
         [EmailAddress] public string? Email { get; set; }
         public string? Address { get; set; }
@@ -31,7 +32,7 @@ public class EditModel : PageModel
     {
         var c = await _db.Customers.FindAsync(id);
         if (c == null) return NotFound();
-        Input = new InputModel { Id = c.Id, FullName = c.FullName, Phone = c.Phone, Email = c.Email,
+        Input = new InputModel { Id = c.Id, FullName = c.FullName, CustomerCode = c.CustomerCode, Phone = c.Phone, Email = c.Email,
             Address = c.Address, City = c.City, State = c.State, GstNumber = c.GstNumber, IsActive = c.IsActive };
         return Page();
     }
@@ -42,6 +43,13 @@ public class EditModel : PageModel
 
         var c = await _db.Customers.FindAsync(Input.Id);
         if (c == null) return NotFound();
+
+        var customerCode = string.IsNullOrWhiteSpace(Input.CustomerCode) ? null : Input.CustomerCode.Trim().ToUpperInvariant();
+        if (customerCode != null && await _db.Customers.AnyAsync(x => x.CustomerCode == customerCode && x.Id != Input.Id))
+        {
+            ModelState.AddModelError(string.Empty, $"A customer with code '{customerCode}' already exists.");
+            return Page();
+        }
 
         // Phone must be globally unique across Agents/Walk-in-Customers/Users — those are the identities
         // that log into the mobile app directly. An agent's own customers are exempt: they never log
@@ -80,7 +88,7 @@ public class EditModel : PageModel
             }
         }
 
-        c.FullName = Input.FullName; c.Phone = Input.Phone; c.Email = Input.Email;
+        c.FullName = Input.FullName; c.CustomerCode = customerCode; c.Phone = Input.Phone; c.Email = Input.Email;
         c.Address  = Input.Address;  c.City  = Input.City;  c.State = Input.State;
         c.GstNumber = Input.GstNumber; c.IsActive = Input.IsActive; c.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();

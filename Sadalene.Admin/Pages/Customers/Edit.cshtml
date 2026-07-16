@@ -22,6 +22,10 @@
                     <span asp-validation-for="Input.FullName" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
+                    <label asp-for="Input.CustomerCode" class="form-label fw-semibold">Customer Code</label>
+                    <input asp-for="Input.CustomerCode" class="form-control" placeholder="Optional, e.g. CUST-0001" />
+                </div>
+                <div class="col-md-6">
                     <label asp-for="Input.Phone" class="form-label fw-semibold">Phone</label>
                     <input asp-for="Input.Phone" class="form-control" />
                 </div>

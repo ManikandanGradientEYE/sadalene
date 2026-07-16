@@ -4,12 +4,13 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead class="table-light">
-                <tr><th>Name</th><th>Phone</th><th>City</th><th>GST</th><th>Agent</th><th>Orders</th><th>Status</th><th></th></tr>
+                <tr><th>Code</th><th>Name</th><th>Phone</th><th>City</th><th>GST</th><th>Agent</th><th>Orders</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var c in Model.Customers.Items)
                 {
                     <tr>
+                        <td class="text-muted small font-monospace">@(c.CustomerCode ?? "—")</td>
                         <td class="fw-semibold">@c.FullName</td>
                         <td>@c.Phone</td>
                         <td class="text-muted">@c.City</td>
@@ -34,7 +35,7 @@
                 }
                 @if (Model.Customers.Items.Count == 0)
                 {
-                    <tr><td colspan="8" class="text-center text-muted py-4">No customers found.</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">No customers found.</td></tr>
                 }
             </tbody>
         </table>

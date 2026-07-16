@@ -21,6 +21,7 @@ public class CreateModel : PageModel
     public class InputModel
     {
         [Required] public string FullName { get; set; } = string.Empty;
+        public string? CustomerCode { get; set; }
         [Required] public string Phone { get; set; } = string.Empty;
         [EmailAddress] public string? Email { get; set; }
         public string? Address { get; set; }
@@ -42,6 +43,13 @@ public class CreateModel : PageModel
         if (!ModelState.IsValid) return Page();
 
         var agentId = Input.AgentId is null or 0 ? null : Input.AgentId;
+        var customerCode = string.IsNullOrWhiteSpace(Input.CustomerCode) ? null : Input.CustomerCode.Trim().ToUpperInvariant();
+
+        if (customerCode != null && await _db.Customers.AnyAsync(x => x.CustomerCode == customerCode))
+        {
+            ModelState.AddModelError(string.Empty, $"A customer with code '{customerCode}' already exists.");
+            return Page();
+        }
 
         // Phone must be globally unique across Agents/Walk-in-Customers/Users — those are the identities
         // that log into the mobile app directly. An agent's own customers are exempt: they never log
@@ -80,7 +88,7 @@ public class CreateModel : PageModel
 
         _db.Customers.Add(new Customer
         {
-            FullName  = Input.FullName, Phone = Input.Phone, Email = Input.Email,
+            FullName  = Input.FullName, CustomerCode = customerCode, Phone = Input.Phone, Email = Input.Email,
             Address   = Input.Address,  City  = Input.City,  State = Input.State,
             GstNumber = Input.GstNumber,
             AgentId   = agentId

@@ -12,6 +12,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.FullName).HasMaxLength(150).IsRequired();
+        builder.Property(x => x.CustomerCode).HasMaxLength(20);
         builder.Property(x => x.Phone).HasMaxLength(15).IsRequired();
         builder.Property(x => x.Email).HasMaxLength(200);
         builder.Property(x => x.Address).HasMaxLength(500);
@@ -23,6 +24,9 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         // exempt, since they never log in themselves (the agent orders on their behalf).
         builder.HasIndex(x => x.Phone).IsUnique().HasFilter("[AgentId] IS NULL");
         builder.HasIndex(x => x.Email).IsUnique().HasFilter("[AgentId] IS NULL AND [Email] IS NOT NULL");
+
+        // CustomerCode is a business reference number — unique across all customers, agent-linked or not.
+        builder.HasIndex(x => x.CustomerCode).IsUnique().HasFilter("[CustomerCode] IS NOT NULL");
 
         builder.HasOne(x => x.Agent)
             .WithMany(a => a.Customers)
