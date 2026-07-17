@@ -37,7 +37,7 @@ export default function CustomerPickerScreen() {
 
   function selectCustomer(customer: CustomerListItemDto) {
     setActingCustomer({ id: customer.id, name: customer.fullName });
-    router.replace("/catalog");
+    router.replace("/home");
   }
 
   return (

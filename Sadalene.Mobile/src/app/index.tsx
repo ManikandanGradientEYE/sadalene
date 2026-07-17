@@ -7,5 +7,5 @@ import { useAuth } from "@/auth/useAuth";
 export default function Index() {
   const { auth } = useAuth();
   if (!auth) return <Redirect href="/login" />;
-  return <Redirect href={auth.identityType === "Customer" ? "/catalog" : "/customer-picker"} />;
+  return <Redirect href={auth.identityType === "Customer" ? "/home" : "/customer-picker"} />;
 }
